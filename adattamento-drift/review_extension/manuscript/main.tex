@@ -1,411 +1,238 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage[margin=23mm,headheight=14pt]{geometry}
-\usepackage{microtype,amsmath,amssymb,booktabs,tabularx,array,graphicx}
-\usepackage[font=small,labelfont=bf]{caption}
-\usepackage[numbers,sort&compress]{natbib}
-\usepackage{xcolor,enumitem,fancyhdr,placeins,url}
-\usepackage[colorlinks=true,linkcolor=blue!45!black,citecolor=blue!45!black,urlcolor=blue!45!black,breaklinks=true]{hyperref}
-\hypersetup{pdftitle={Beyond Threshold Adaptation: Error Trade-offs in Intrusion Detection with Sparse Delayed Labels},pdfauthor={Oleksandr Kuznetsov; Emanuele Pio De Bernardis},pdfsubject={Revised manuscript with post-review experiments, 1 November 2026},pdfkeywords={intrusion detection, concept drift, delayed labels, threshold adaptation, additive splines, TON IoT, UNSW-NB15}}
-\setlength{\parindent}{1.2em}
-\setlength{\parskip}{3pt}
-\linespread{1.04}
-\setlist{nosep,leftmargin=*}
-\setlength{\emergencystretch}{2em}
-\pagestyle{fancy}\fancyhf{}
-\fancyhead[L]{\small Weight and threshold adaptation in intrusion detection}
-\fancyhead[R]{\small Revised manuscript}
-\fancyfoot[C]{\thepage}
-\newcommand{\F}{\textsc{Frozen}}
-\newcommand{\FIT}{\textsc{Fit192}}
-\newcommand{\CAL}{\textsc{Cal64}}
-\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
-\newcommand{\pp}{\,\mathrm{pp}}
-\newcommand{\meanauc}{\overline{\mathrm{AUC}}_{\mathrm{block}}}
-\makeatletter
-\newcommand{\tablerows}[1]{\@@input #1 }
-\makeatother
-\title{\vspace{-12mm}\textbf{Beyond Threshold Adaptation: Error Trade-offs in Intrusion Detection with Sparse Delayed Labels}}
-\author{Oleksandr Kuznetsov$^{1,2,*}$ \quad Emanuele Pio De Bernardis$^{1}$\\[5pt]
-\small $^{1}$Department of Theoretical and Applied Sciences, eCampus University,\\[-2pt]
-\small Via Isimbardi 10, 22060 Novedrate (CO), Italy\\[3pt]
-\small $^{2}$Department of Intelligent Software Systems and Technologies,\\[-2pt]
-\small School of Computer Science and Artificial Intelligence,\\[-2pt]
-\small V. N. Karazin Kharkiv National University, 4 Svobody Sq., 61022 Kharkiv, Ukraine\\[5pt]
-\small $^{*}$Correspondence: \href{mailto:oleksandr.kuznetsov@uniecampus.it}{oleksandr.kuznetsov@uniecampus.it}\\[3pt]
-\small ORCID: \href{https://orcid.org/0000-0003-2331-6326}{0000-0003-2331-6326} (O.K.); \href{https://orcid.org/0009-0004-7915-5204}{0009-0004-7915-5204} (E.P.D.B.)}
-\date{1 November 2026 --- revised manuscript with additional experiments}
+\input{preamble}
+\hypersetup{pdftitle={Thresholds and Learning in Adaptive Intrusion Detection: A Two-Capture Case Study},pdfsubject={Second-review revision, 1 November 2026}}
+\title{\vspace{-12mm}\textbf{Thresholds and Learning in Adaptive Intrusion Detection: A Two-Capture Case Study}}
+\input{authors}
+\date{1 November 2026 --- second-review revision}
 \begin{document}
-\maketitle
-\thispagestyle{plain}
+\maketitle\thispagestyle{plain}
 \begin{abstract}
-How much of an adaptive intrusion detector's apparent improvement comes from moving its decision threshold, and where does the remaining benefit occur? We examine this question using paired chronological replays with sparse delayed labels. A four-trace experiment separates a frozen or refitted additive spline head from a historical or recent threshold. On the original TON\_IoT evaluation, threshold adaptation alone raises recall from 21.1\% to 89.1\%; adding head adaptation mainly reduces false positives. However, 96.7\% of that reduction occurs on feature vectors observed in earlier intervals, where fewer false alarms are accompanied by more missed attacks. Only three of five seeds meet the pre-specified joint-error criterion. A post-review extension adds an independently updated threshold, a threshold using the full acquired-label budget, intercept-only and prior-centred controls, logistic regression, an adaptive random forest, delay and budget sensitivity, and a separate chronological UNSW-NB15 evaluation. Thresholds for five error-cost ratios are selected exclusively from available past labels. The spline head changes the FN/FP compromise in dataset-dependent directions, whereas the forest retains substantial benefit over its own frozen control. The contribution is an auditable decomposition of decisions, ranking, label availability, and representation overlap, rather than a new model architecture or a universal advantage of adaptation.
+An adaptive intrusion detector can change its score function, its decision threshold, or both. We examine their separate contributions under sparse, delayed supervision in two recorded network captures. Paired chronological replays hold label requests and feedback timing fixed, while varying learning, calibration memory, and threshold objectives. In TON\_IoT, a spline head reduces the false-positive rate by 28.36 percentage points relative to a frozen detector when both thresholds maximize recent balanced accuracy. This comparison is sensitive to the operating policy: doubling the false-positive weight raises the frozen detector's balanced accuracy from 72.12\% to 86.78\%, exceeding the head's 84.84\% at the original weight; the head reaches 87.55\% at the doubled weight. On UNSW-NB15, the historical frozen spline achieves 96.29\% balanced accuracy, above both recent threshold adaptation and head refitting. Additional diagnostics examine matched-error operating points, calibration FPR targets, precision--recall, model initialization, and controller sensitivity. Poor transfer of logistic regression and degeneration of chronological forest initializations qualify comparisons against their frozen controls. Shuffled forest initialization preserves a TON learning benefit at a common error rate, while its frozen historical policy is stronger on UNSW. Five seeds quantify algorithmic variation conditional on each recorded stream. The contribution is a reproducible case study showing how threshold policy, score quality, and effective label use jointly determine the apparent benefit of adaptation.
 \end{abstract}
-\noindent\textbf{Keywords:} network intrusion detection; concept drift; delayed labels; decision thresholds; error trade-offs; additive splines; reproducible evaluation.
+\noindent\textbf{Keywords:} intrusion detection; delayed labels; threshold selection; error trade-offs; temporal evaluation; reproducibility.
 
 \section{Introduction}
-Updating an intrusion detector can change two different objects: the score used to rank observations and the decision threshold used to raise alarms. A detector may recover missed attacks by changing only its threshold. Conversely, an updated score can rank attacks more accurately while producing poor decisions at an inherited threshold. A useful evaluation must establish which intervention changes false positives (FP) and false negatives (FN), and which observations receive the benefit.
+An intrusion detector assigns a score to each observation and compares it with a decision threshold. Updating the score and moving the threshold are different interventions. Either can change the number of missed attacks and false alarms. A comparison of adaptive and static detectors therefore needs to establish which intervention supplies the reported improvement.
 
-These distinctions matter under limited supervision. Concept-drift methods respond to changes in the data-generating process \citep{gama2014}, while prequential evaluation requires prediction before learning from an observation \citep{gama2013}. Security labels can be expensive and delayed; their availability constrains both refitting and threshold selection. Operational usefulness also depends on attack prevalence and alarm workload, not just a balanced benchmark score \citep{axelsson2000,sommer2010}.
+This question becomes more difficult when labels are scarce and delayed. The observations available for refitting may differ from those available for threshold selection. A small calibration memory can favor a different operating point from a larger memory, even when both optimize the same objective. Furthermore, a frozen model can be a weak reference because its initial fit transfers poorly to the evaluation period. These effects can make a large adaptive-versus-frozen contrast misleading as evidence of general learning superiority.
 
-We ask: \emph{how much of the apparent gain over a historical detector is reproduced by threshold adaptation alone, and how does the incremental effect of learning differ across operating costs and previously observed versus unobserved feature vectors?} Our initial case study uses a compact additive spline representation with nine refitted head parameters. It provides an explicit intervention rather than an architectural novelty. A subsequent extension includes logistic regression and adaptive random forests to test how the observed pattern depends on the learner.
+We study these issues using chronological TON\_IoT and UNSW-NB15 replays. The principal question is: \emph{what improvement remains after specifying a strong threshold-only controller, a relevant operating point, and a clear label-use contract?} The model families are an additive spline detector, logistic regression (LR), and an adaptive random forest (ARF). The spline intervention refits only eight feature gains and an intercept, providing a compact, explicit change to the score function.
 
-The study has two evidence stages. The original TON\_IoT campaign follows a protocol fixed after development and retains its unsuccessful four-of-five joint FN/FP acceptance criterion. The post-review extension is specified before its new runs, but its TON results are exploratory because the original evaluation interval was already examined. It adds stronger threshold-only controls and a separate chronological UNSW-NB15 capture. Across both stages, we report effective label use, threshold eligibility, absolute errors, overlap strata, ranking, and causally selected operating points. This makes the contribution a reusable evaluation procedure and an empirical account of conditional trade-offs. The forest comparator supplies a useful counterexample to a threshold-only explanation: its learning benefit remains substantial against its own frozen baseline.
+The evidence has a defined scope. The historical TON campaign supplies an archived four-trace experiment. Subsequent controls and the present diagnostics were motivated by its observed outcomes. Both extensions are exploratory on TON. UNSW is a separate controlled capture, but had appeared elsewhere in the project. Neither capture is an untouched prospective field test. All reported seed variation is conditional on one stream per dataset.
 
-\section{Related work and scope}
-\subsection{Adaptive security models with limited and delayed labels}
-Sparse supervision and delayed feedback are established problems in stream learning. Active learning under drift studies how to allocate a limited labeling budget \citep{zliobaite2014}; adaptive random forests combine online bagging, feature randomization, and drift-triggered replacement \citep{gomes2017}. Delayed-label evaluation explicitly separates observation, prediction, and learning times \citep{grzenda2020}. We retain uniform sampling to hold label acquisition fixed while comparing model and threshold updates.
+The main contribution is the joint evaluation of score adaptation, causal threshold selection, label use, and representation recurrence. The results below emphasize operating policies and baseline quality. The Supplement retains the full historical campaign, implementation details, attack-family results, resource accounting, and sensitivity tables.
 
-INSOMNIA directly studies network intrusion detection under drift, using active learning and label estimation to reduce update latency and labeling overhead \citep{andresini2021}. In Android security, continuous learning combines contrastive representations with selective labeling \citep{chen2023}. These methods address how to acquire information or adapt a model. Our complementary question concerns attribution: how much of a reported decision gain survives a stronger threshold-only baseline using the same acquired labels?
+\section{Related work}
+Concept-drift research distinguishes changes in a data-generating process from the mechanisms used to detect or respond to them \citep{gama2014}. Prequential evaluation requires prediction before an observation is used for learning \citep{gama2013}; delayed-label evaluation makes the feedback schedule explicit \citep{grzenda2020}. Adaptive random forests combine online ensembles with drift-triggered replacement \citep{gomes2017}. Active learning addresses the separate question of which labels to request \citep{zliobaite2014}. We use uniform requests so that acquisition remains fixed across controllers.
 
-Transcend detects aging malware classifiers through comparisons with their training distributions \citep{jordaney2017}. CADE identifies and explains individual drifting samples using a learned contrastive representation, including a network-intrusion case study \citep{yang2021}. These are drift-detection and explanation mechanisms; our paired update controllers examine the downstream error trade-off once delayed labels become available.
+In security, INSOMNIA combines adaptation with active learning and label estimation \citep{andresini2021}; continuous Android malware learning similarly couples representation updates and selective labeling \citep{chen2023}. Transcend and CADE study drift detection and explanation \citep{jordaney2017,yang2021}. Our focus is the downstream attribution of decision changes once feedback is available. Temporal and spatial biases, deployment assumptions, and dataset construction remain central to this interpretation \citep{pendlebury2019,arp2022,sommer2010,engelen2021}.
 
-Temporal consistency also extends beyond a chronological train/test boundary. TESSERACT formalizes spatial and temporal biases in security evaluation \citep{pendlebury2019}; broader security-ML analyses emphasize experimental assumptions and deployment mismatches \citep{arp2022,sommer2010}. Here label timestamps are explicit within the test interval, and exact vector overlap is reported separately from row identity. Dataset audits such as the CICIDS2017 case study show why preprocessing and label provenance need independent checks \citep{engelen2021}.
+Threshold selection differs from probability calibration \citep{guo2017}. Here CAL denotes examples used to select a binary threshold, without asserting that scores are posterior probabilities. Prior-shift correction provides an intercept-based reference \citep{saerens2002,lipton2018}, while changing class-conditional traffic can require more than an intercept. The spline score is a logistic generalized additive model \citep{hastie1986}; its fixed univariate representation also relates to neural additive models and KANs \citep{agarwal2021,liu2025}. The study evaluates update policies rather than proposing a new architecture.
 
-\subsection{Threshold selection, prior shift, and ranking}
-Probability calibration estimates agreement between predicted probabilities and observed frequencies \citep{guo2017}. In this paper, CAL denotes a memory used to select a binary decision threshold. It does not imply calibrated posterior probabilities. AUROC measures ranking and is unchanged by a threshold-only intervention on fixed scores.
+\section{Data and causal evaluation}
+\subsection{Captures, partitions, and feature availability}
+TON\_IoT supplies network records from a controlled IoT/IIoT environment \citep{moustafa2021,booij2022}. We retain eight complete-flow numerical features: duration, source/destination bytes, missed bytes, and source/destination packet and IP-byte counts. Records are ordered by start time plus duration. A fits the initial transformation and model, B selects historical thresholds, C supports the original development, and D is evaluated. The full dates, preprocessing counts, and earlier structural exposure are recorded in Supplement S1.
 
-Changes in class proportions can also change a classifier's operating point. Prior-probability correction is well established \citep{saerens2002}, and label-shift estimation assumes that class-conditional feature distributions remain stable while class priors change \citep{lipton2018}. Class-balanced refitting makes a score shift plausible in our protocol. However, changing attack families, feature distributions, head slopes, and regularization prevent attributing the observed shift to pure label shift. We therefore treat a refitted head with its historical threshold as a diagnostic control and test a separate intercept-only correction.
-
-\subsection{Additive models and intrusion datasets}
-An additive logistic predictor with smooth univariate terms belongs to the generalized additive model tradition \citep{hastie1986}. Neural additive models learn such terms with neural subnetworks \citep{agarwal2021}; KANs use learnable univariate edge functions \citep{liu2025}. Our fixed B-spline representation can be described as KAN-style, but the online intervention is a linear head refit over eight fixed feature contributions. Results from convolutional KAN intrusion classifiers \citep{wang2025} therefore provide architectural context rather than a matched performance baseline.
-
-TON\_IoT provides heterogeneous IoT/IIoT network data \citep{moustafa2021,booij2022}. UNSW-NB15 supplies a separate laboratory capture with different normal traffic and attack composition \citep{moustafa2015unsw,moustafa2016unsw}. We use compact numerical feature sets and complete-flow availability in both. The datasets provide two empirical settings; their controlled captures and feature contracts delimit the scope of generalization.
-
-\section{Materials and methods}
-\subsection{Dataset, feature availability, and chronological partitions}
-The source network archive contains 22,339,021 rows. The preprocessing manifest records 869 invalid rows and 22,338,152 retained rows. The retained input vector contains eight numerical fields in this order: \code{duration}, \code{src_bytes}, \code{dst_bytes}, \code{missed_bytes}, \code{src_pkts}, \code{src_ip_bytes}, \code{dst_pkts}, and \code{dst_ip_bytes}. Binary labels distinguish normal traffic from attacks. The eight-feature contract was inherited from the project's compact-detector experiments: it uses flow-level numerical aggregates without IP identifiers, ports, application strings, or categorical encodings. Holding it fixed makes the adaptation intervention comparable, but is not a feature-optimality claim. The chronological evaluation stream retains its observed prevalence.
-
-Records are ordered by their complete-feature availability time,
-\begin{equation}
- t_{\mathrm{ready}}=t_{\mathrm{start}}+\mathrm{duration}.
- \label{eq:ready}
-\end{equation}
-This is an offline flow-completion replay. It does not assume that duration or byte totals are known at the first packet. The retained data cover ten UTC calendar days in April 2019, with no retained interval from 5 to 22 April. Table~\ref{tab:data} defines the four chronological partitions. A estimates the initial transformation and model; B selects the initial threshold; C supports development; and D is reserved for the final predictive campaign.
+UNSW-NB15 supplies a separately collected laboratory capture \citep{moustafa2015unsw,moustafa2016unsw}. We use its four full network CSVs, remove only three verified duplicate file-boundary rows, and retain 2,540,044 records. The eight numerical fields are \code{dur}, \code{sbytes}, \code{dbytes}, \code{sloss}, \code{dloss}, \code{Spkts}, \code{Dpkts}, and \code{tcprtt}. This is a compact feature contract with different semantics from TON. Records are sorted by $\max(\mathrm{Ltime},\mathrm{Stime}+\mathrm{float32}(\mathrm{dur}))$, then stable row identity, and split chronologically 40\%/20\%/40\% into A/B/D. Equal timestamps at boundaries are retained without an embargo. Models are fitted anew on each dataset.
 
 \begin{table}[tb]
 \centering\small
-\caption{Chronological data partitions. Counts refer to retained rows; normal and attack counts sum to each partition total. The separate overlap strata are described in Section~\ref{sec:overlap}.}
+\caption{Evaluation streams. Observed prevalence is retained. Each dataset supplies one recorded stream, shared by all five algorithmic seeds.}
 \label{tab:data}
-\begin{tabular}{llrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Partition & UTC dates, April 2019 & Total & Normal & Attack \\
+Stream & D records & Normal & Attacks & Hours \\
 \midrule
-A: initial fit & 2--4, 23 & 3,956,308 & 223,199 & 3,733,109 \\
-B: initial threshold & 24 & 5,681,198 & 89,323 & 5,591,875 \\
-C: development & 25--26 & 9,150,673 & 173,316 & 8,977,357 \\
-D: final evaluation & 27--29 & 3,549,973 & 309,673 & 3,240,300 \\
+TON\_IoT & 3,549,973 & 309,673 & 3,240,300 & 62.77 \\
+UNSW-NB15 & 1,016,018 & 803,736 & 212,282 & 7.89 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Attack composition changes across these intervals. A contains scanning attacks; B contains scanning and denial of service. C contains distributed denial of service, denial of service, injection, and password attacks. D contains backdoor, man-in-the-middle, password, ransomware, and cross-site scripting records. These changes provide temporal heterogeneity, but the experiment does not identify a causal type of drift. Backdoor, man-in-the-middle, ransomware, and cross-site scripting are absent from A/B/C; password also occurs in C. The extension reports per-family attack recall.
-
-Before the final campaign, D had been read for structural checks and feature-vector overlap analysis. Its predictive evaluation was run only after the protocol and code were fixed. Accordingly, D is a later evaluation interval, not a completely unseen resource in the broader research process. The five initial models and their B thresholds are prepared before the final runner loads D. C is used in that runner to construct the prior-vector inventory; the C adaptive state is not carried into D.
-
-\subsection{Initial model and restricted adaptation}
-Each raw input is transformed by $\log(1+\max(x,0))$ and standardized using means and standard deviations estimated from A. A zero standard deviation is replaced by one. The transformation remains fixed. Each transformed feature is then mapped to its range observed in A and clipped to $[0,1-10^{-9}]$ for spline evaluation. Values outside the observed range therefore saturate at a boundary rather than extrapolating the spline.
-
-For input $j$, the model contains eight cubic B-spline basis functions $B_{jr}$ with an open knot vector based on six equally spaced positions between zero and one. The initial function is
+\subsection{Models, feedback, and memory}
+All models use a fixed $\log(1+\max(x,0))$ transformation and standardization fitted on A. The initial LR and spline fits use the same seeded 400,000-row sample of A. LR uses the eight transformed inputs. The spline model fits eight cubic B-spline basis coefficients per feature, with subsequent adaptation restricted to
 \begin{equation}
- f_j(x_j)=\sum_{r=1}^{8}\theta_{jr}B_{jr}(u_j(x_j)),
- \qquad s(x;g,b)=b+\sum_{j=1}^{8}g_j f_j(x_j).
- \label{eq:model}
+ s(x;g,b)=b+\sum_{j=1}^{8}g_j f_j(x_j),
 \end{equation}
-The 64 spline coefficients and initial intercept are fitted by logistic regression on a uniform, seeded 400,000-row sample of A. The implementation uses scikit-learn with \code{C=1.0} and \code{max_iter=1000} \citep{pedregosa2011}. The initial gains are $g_j=1$. Subsequent adaptation leaves the transformation, knots, and all $\theta_{jr}$ fixed, and refits only the eight gains and intercept on the current fitting memory. Each refit solves a new logistic-regression problem with L2 shrinkage of the eight weights toward zero and an unpenalized intercept. It neither starts from nor penalizes distance to the previous head. The fixed spline functions retain information from A, while the head is newly fitted to the current memory. The extension explicitly tests a penalty centred at the previous head.
+where the eight functions $f_j$ remain fixed. A head update fits eight gains and an intercept by regularized logistic regression on the current FIT memory. The original refit uses zero-centred L2 regularization; a previous-head-centred alternative is retained in the Supplement.
 
-The empirical object is a logistic generalized additive model with an adaptive linear combination of fixed spline functions. Head refitting can reweight these functions, but cannot learn a new spline shape or an interaction between inputs.
+The stream is predicted in 10,000-row blocks. Uniform requests select 1\% of each block without replacement. Requested labels from block $k$ arrive after prediction of block $k+1$ and first affect block $k+2$. The last incomplete block is retained. All methods use the same requested row identities within a dataset, seed, delay, and budget condition. The current sampler uses \code{SeedSequence([seed, block, 20261101])}. The archived campaign's older sampler is used only in its separate numerical bridge.
 
-\subsection{Threshold objective and four paired traces}
-The implementation predicts attack when $s(x)>\tau$ and normal otherwise. For labeled set $\mathcal{L}$, the threshold objective is
-\begin{equation}
- \tau^{*}(\mathcal{L},s)\in\arg\max_{\tau\in\mathcal{T}}
- \frac{1}{2}\left[\frac{\mathrm{TP}(\tau)}{P}+
- \frac{\mathrm{TN}(\tau)}{N}\right],
- \label{eq:threshold}
-\end{equation}
-where $P$ and $N$ are the attack and normal counts in $\mathcal{L}$. Candidates comprise the distinct observed scores and a floating-point value strictly below the minimum; together with the maximum observed score, this covers the all-attack and all-normal decisions. Scores and objective values use float64. Maximizers are selected by exact equality, without a tolerance, and ties are resolved by the lower median of the sorted maximizing candidates, at zero-based index $\lfloor(m-1)/2\rfloor$. This is a deterministic convention, not a demonstrated threshold-stability property.
-
-The B threshold is selected separately for each initial model using all of B, then kept fixed in the corresponding B traces. Table~\ref{tab:traces} defines the four traces. Both frozen traces use identical initial scores; both FIT192 traces use an identical adapted score trajectory. Consequently, a threshold-only contrast cannot change AUROC. All traces share the same label requests and update eligibility decisions within a seed.
+A salted hash of each raw feature vector assigns it permanently to FIT or CAL with nominal probabilities 3/4 and 1/4. The default memories hold 192 FIT and 64 CAL observations, with equal per-class quotas. Repeated observations can occupy separate positions. CAL entries are eligible for 50 blocks from observation time; at least five observations of each class are required. FIT has no age filter. A head and its matched threshold change atomically only when the transaction is valid. A separate CAL256 memory accepts all requested labels and updates a frozen detector's threshold independently.
 
 \begin{table}[tb]
 \centering\small
-\caption{Four paired traces. B denotes the initial fixed threshold; CAL64 denotes recent threshold selection. The primary contrast is the last row minus the second row.}
-\label{tab:traces}
+\caption{Information contracts. All rows share acquisition and feedback timing. Model state and pending labels are additional to the listed example memories.}
+\label{tab:contracts}
 \begin{tabularx}{\linewidth}{lXX}
 \toprule
-Trace & Score function & Decision threshold \\
+Controller & Learning & Threshold selection \\
 \midrule
-Frozen / B & Initial A model & Fixed, selected on B \\
-Frozen / CAL64 & Initial A model & Selected on recent CAL64 labels \\
-FIT192 / B & Head refitted on FIT192 & Fixed, selected on B \\
-FIT192 / CAL64 & Same refitted head as FIT192 / B & Selected on recent CAL64 labels \\
+Frozen / B & A only & Historical B \\
+Frozen / CAL256 & A only & All requested labels; recent CAL256 \\
+Head / CAL64 & Disjoint FIT192 & Recent CAL64; valid head transaction \\
+ARF / CAL64 or CAL256 & Every arriving requested label & CAL labels reused in learning \\
+ARF FIT-only / CAL64 & Arriving FIT-role labels only & Disjoint CAL64 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\subsection{Label budget, delay, and memory separation}
-D is divided into 354 blocks of 10,000 records and a final block of 9,973 records, indexed from 0 to 354. Predictions for a block are emitted before any labels from that block enter the controller. A uniform sample without replacement requests $\lfloor0.01 n_k\rfloor$ labels from block $k$: 100 from a full block and 99 from the last block. Requested labels arrive at the end of block $k+1$ and can first influence predictions in block $k+2$ (Figure~\ref{fig:protocol}). Thus 35,499 labels are requested, of which the final 99 remain pending when the observed stream ends. Full labels are available only to the offline evaluation code; the online update receives the delayed requested subset.
+ARF uses River 0.22.0, ten trees, and defaults apart from the seed \citep{riverdocs}. The first extension processes the A sample chronologically. The present audit additionally fits the identical sample in its seeded random order. Both initial states are evaluated frozen and with feedback. The FIT-only variant starts from the chronological state and excludes every CAL-role label from learning. This aligns label disjointness with the head experiment, while retaining the forest's persistent tree memory. It does not impose the finite FIT192 retention contract. Thus ARF is an equal-acquisition-budget comparator with explicitly different model state and, for its standard variant, different label reuse.
 
-\begin{figure}[tb]
-\centering\includegraphics[width=\linewidth]{figures/fig1_protocol.pdf}
-\caption{Causal protocol. A label requested in block $k$ cannot affect predictions before block $k+2$. Fitting and threshold selection use separate memories; all state changes are committed together only after the eligibility checks succeed.}
-\label{fig:protocol}
-\end{figure}
-
-Both memories start empty at the beginning of D. FIT192 holds at most 192 labeled examples, with target quotas of 96 normal and 96 attack examples. CAL64 holds at most 64 examples, with target quotas of 32 per class. Either class can borrow unused capacity. On overflow, the oldest example from a class above quota is removed. The quotas alter the stored fitting and threshold-selection samples, not the evaluation stream or the requested-label budget.
-
-A fixed salted SHA-256 rule assigns each raw eight-feature vector permanently to one role: digest modulo four equal to zero selects CAL, and other values select FIT. This prevents an identical vector from appearing in both fitting and calibration memories, even if it recurs later in the stream. It does not deduplicate either memory internally. Role serialization uses canonical float64 bytes; exact overlap between chronological partitions is measured separately using the stored float32 vectors. Appendix~\ref{sec:implementation} specifies these encodings.
-
-FIT192 requires both binary classes. CAL64 contributes only entries observed at most 50 blocks earlier and requires at least five normal and five attack labels. FIT192 has no corresponding age cutoff. If these conditions hold, the implementation fits a candidate head, scores the eligible CAL64 examples with both the frozen and candidate heads, and computes two thresholds using Equation~\ref{eq:threshold}. A valid candidate head and both thresholds replace the prior state atomically for the next block. A failed eligibility or numerical check leaves all prior state unchanged and records the reason.
-
-This common schedule isolates the effect of enabling head fitting within the fixed controller, while keeping threshold data and update eligibility matched. It does not estimate a benefit per additional label: FIT192/CAL64 can use FIT-role labels that Frozen/CAL64 leaves unused. The extension therefore adds independently eligible CAL64 and a frozen CAL256 control that can use every acquired label. The 256-example capacity also excludes the delayed-label queue, model state, feature transformations, Python object overhead, temporary solver arrays, and full input arrays used by the offline runner. It must not be interpreted as a total memory bound for an embedded implementation.
-
-\subsection{Overlap-aware reporting}\label{sec:overlap}
-The chronological partitions have disjoint row identities, but their eight-feature vectors overlap. An exact SHA-256 inventory of A/B/C marks each D vector as previously observed or unobserved. In D, 37.23\% of rows and 58.03\% of normal rows match a prior vector. The unobserved-vector mask retains 2,228,436 rows: 129,982 normal and 2,098,454 attack observations. The complementary seen stratum contains 179,691 normal and 1,141,846 attack observations.
-
-This mask is applied only when aggregating predictions. It changes neither the prediction sequence nor the adaptive state. Requested labels from all of D can still enter the controller, and repetitions within D remain. The supplementary result therefore measures performance on vectors absent from A/B/C during the same adaptive replay. It is not a separately trained no-overlap experiment, an unseen-attack-family test, or a guarantee that a vector has never previously affected the state within D. A matching eight-feature vector is also not proof that two original network events are duplicates.
-
-\subsection{Metrics, paired seeds, and decision criterion}
-We report global false negatives (FN), false positives (FP), attack recall $\mathrm{TP}/P$, false-positive rate $\mathrm{FP}/N$, and balanced accuracy
+\subsection{Threshold objectives and matched-error descriptions}
+A decision is positive when $s(x)>\tau$. The historical and recent thresholds minimize
 \begin{equation}
- \mathrm{BA}=\tfrac12\left(\mathrm{recall}+1-\mathrm{FPR}\right).
+ L_\lambda(\tau)=\mathrm{FNR}(\tau)+\lambda\,\mathrm{FPR}(\tau).
+ \label{eq:cost}
 \end{equation}
-These rates are computed from the confusion matrix aggregated over the selected scope. Ranking is summarized by the unweighted mean of AUROC over blocks containing both classes:
-\begin{equation}
- \meanauc=\frac{1}{|\mathcal{V}|}\sum_{k\in\mathcal{V}}\mathrm{AUC}_k.
-\end{equation}
-Undefined AUROCs remain missing. Valid denominators are 352 of 355 blocks for all D and 350 of 355 for the A/B/C-unseen subset. This statistic is not the AUROC obtained by pooling every score across the stream; it does not require scores from different adaptive states to be directly comparable.
+The first extension fixes $\lambda\in\{0.25,0.5,1,2,4\}$; the current audit adds 0.75, 1.25, 1.5, and 3. Every threshold is fitted using past available labels. At $\lambda=1$, this is equivalent to maximizing balanced accuracy (BA). Exact candidate and tie rules appear in Supplement S1. For attack prevalence $\pi$ and costs $C_{\rm FN},C_{\rm FP}$, the rate weight is $C_{\rm FP}(1-\pi)/(C_{\rm FN}\pi)$. A value of one is a declared evaluation objective, rather than a universal operational cost.
 
-Seeds 42--46 determine the initial A subsample and block-level label sampling. The original sampler initializes each block with seed+k; different seed/block pairs can therefore reuse the same relative query positions. The extension replaces this with a tuple-keyed SeedSequence while retaining common requests across methods. Each seed shares all observations and requests across its four traces. Values are means and sample standard deviations ($n-1$ denominator) over the five seeds. Differences are computed within seed before aggregation. These deviations describe stochastic variation conditional on one recorded stream; they are neither confidence intervals nor variation across five independent datasets.
+Two complementary checks address operating-point comparability. First, we interpolate the observed FPR/recall polylines within their support, separately for each paired seed. This is a retrospective description of recorded policies. It neither selects a deployable threshold nor estimates an oracle ROC curve. Interpolating a curve of seed means is also reported and kept distinct from averaging the paired-seed comparisons.
 
-The versioned protocol fixed the primary comparison as FIT192 / CAL64 minus Frozen / CAL64. Its decision criterion required $\Delta\mathrm{FN}\leq0$ and $\Delta\mathrm{FP}\leq0$, with at least one strict inequality, in at least four of five seeds. This is a pre-specified empirical acceptance rule, not a statistical significance test or an externally registered trial. The full-stream and supplementary outcomes are reported whether or not the criterion succeeds. We do not select a new operating threshold using final D outcomes.
+Second, causal FPR-target controllers use only past normal calibration scores. For target $\alpha\in\{0.05,0.10,0.20\}$, they select the smallest observed negative-score threshold with empirical FPR at most $\alpha$, respecting complete ties. B supplies the initial threshold. The frozen score uses CAL256, and the head uses its disjoint CAL memory. Requested targets are identical; achieved future FPR can differ under distribution change. We report both achieved FPR and recall rather than assuming that a calibration target is a future guarantee.
 
-\input{extension_methods}
+\subsection{Metrics, overlap, and evidence status}
+We sum confusion counts over D before calculating recall, FPR, BA, and precision. AUROC and noninterpolated average precision (AP) are also calculated within prediction blocks containing both classes. We report macro, normal-count-weighted, and attack-count-weighted summaries and their coverage. Pooled AUROC/AP are used only for a fixed score. Pooling adaptive scores would compare values from different fitted states. AP is the recall-increment-weighted mean of precision, as implemented by scikit-learn, rather than a trapezoidal interpolation \citep{pedregosa2011,sklearnap}.
 
-\section{Original TON\_IoT campaign results}
-\subsection{Development evidence motivating the final comparison}
-Development on C proceeded through four recorded stages. These stages answer different questions and are not a single ranking of competing algorithms. In the initial adaptation study, selecting updates using evidence of score inversion outperformed a random schedule with the same number of updates in mean block AUROC by 0.0217, 0.0559, and 0.0719 for logistic regression, an MLP, and the additive spline model, respectively, against the mean of 20 random schedules. For the additive spline model, none of these update policies exceeded the frozen mean block AUROC of 0.8911: evidence-driven, continuous, and random updates attained 0.8341, 0.8073, and 0.7621. The fitted-memory inversion diagnostic was in sample, and out-of-sample evidence from requested block labels was often unavailable or weak after the required delay. Improved ranking did not consistently improve both error counts.
+Seen/unseen strata refer to exact equality of eight stored float32 features against earlier A/B/C vectors on TON and A/B vectors on UNSW. They describe representation recurrence, not event identity, attack-family novelty, or memorization. Both strata are evaluated on the same adaptive trajectory.
 
-The next stage changed the memory policy while retaining a 256-example capacity. For the continuously updated spline model, class-aware memory increased mean block AUROC by about 0.084 compared with global FIFO, while attack recall fell by 56.66 percentage points at the fixed historical threshold. Subsequent threshold experiments showed why score and decision changes had to be separated. Re-selecting only the frozen spline threshold improved recall on C by 17.73 percentage points and increased FPR by 1.48 percentage points, with exactly unchanged AUROC. Recalibration using the entire B archive was also explored during development, but that configuration required the additional historical archive and is not presented as satisfying the final 256-example online-memory contract.
+Seeds 42--46 vary the initial sample and label requests. All seed means and sample SDs are \emph{conditional on the same recorded stream}; five seeds are not five independent captures. The historical acceptance rule required joint non-increase of FN and FP, with at least one strict improvement, in four of five spline seeds against Frozen/CAL64. It was a versioned empirical rule, not an externally registered trial or significance test. Analogous counts for other models and controls are exploratory. Original results, first-extension results, and new diagnostics are retained separately.
 
-The final development configuration separated FIT192 and CAL64. For seed 42 on C, FIT192 / CAL64 reduced FPR by 16.08 percentage points relative to Frozen / CAL64, but reduced recall by 2.60 percentage points and mean block AUROC by about 0.109. This mixed outcome motivated preserving the four traces and reporting FN and FP separately in the final evaluation. The C findings are development evidence, not an additional independent confirmation of the final D result.
+\section{Results}
+\subsection{The apparent head benefit depends on threshold policy}
+Table~\ref{tab:costs} contains the central comparison. On TON at $\lambda=1$, the spline head lowers FPR by 28.36 percentage points and recall by 2.92 points relative to Frozen/CAL256. Each seed has fewer FP and more FN. This is a difference between two complete update policies at one declared calibration objective.
 
-\subsection{Absolute outcomes on the final interval}
-Tables~\ref{tab:rates} and~\ref{tab:counts} report all four traces, including the controls that retain the B threshold. With frozen weights, recent threshold selection raises mean attack recall on all D from $21.11\%$ to $89.09\%$, while FPR rises from $12.64\%$ to $46.74\%$. Mean block AUROC remains $0.8536$ because the scores are identical. Thus, a large recovery in recall can arise entirely from moving the decision threshold.
+Changing only the frozen detector's cost weight to $\lambda=2$ raises its BA from 72.12\% to 86.78\%, above the head's 84.84\% at $\lambda=1$. At $\lambda=2$, the head reaches 87.55\% BA. The large 28-point FPR contrast therefore cannot be interpreted as a comparable advantage across operating points. The observed operating curves in Figure~\ref{fig:costs} show where the gap changes.
 
 \begin{table}[tb]
-\centering\fontsize{8.6}{10.5}\selectfont
-\setlength{\tabcolsep}{4pt}
-\caption{Final rates: mean $\pm$ sample SD over five paired seeds. Recall, FPR, and BA are percentages calculated globally. AUROC is the unweighted mean over valid blocks (352/355 for all D; 350/355 for A/B/C-unseen vectors), then averaged over seeds.}
-\label{tab:rates}
-\begin{tabular}{lrrrr}
-\toprule
-Trace & Recall (\%) & FPR (\%) & BA (\%) & Mean block AUROC \\
-\midrule
-\tablerows{tables/rates_rows.tex}
-\bottomrule
-\end{tabular}
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Spline operating policies. Rates are percentages, mean $\pm$ sample SD across five randomizations conditional on each stream. Each threshold uses only past labels.}
+\label{tab:costs}
+\begin{tabular}{llrrr}\toprule
+Stream & Policy & Recall & FPR & BA \\\midrule
+\tablerows{tables/review2_cost_rows.tex}
+\bottomrule\end{tabular}
 \end{table}
+
+\begin{figure}[tb]
+\centering\includegraphics[width=\linewidth]{figures/review2_operating_points.pdf}
+\caption{Causal threshold policies for the fixed cost grid. Points are means over five paired randomizations on each single stream. Lines connect implemented policies and do not constitute an oracle frontier. Axis ranges differ. The annotated weights illustrate why a single $\lambda=1$ contrast cannot establish curve-wide superiority.}
+\label{fig:costs}
+\end{figure}
+
+The original five-point grid also makes interpolation resolution important. In TON seed 42, the frozen thresholds at $\lambda=0.25$ and 0.5 coincide in 238 of 355 blocks; those at 2 and 4 coincide in 201. Finite calibration data produce shared thresholds and coarse operating points. Supplement S4 provides each seed and distinguishes interpolation of the mean curve from paired-seed interpolation. The latter retains variation in the location of the operating points; the two summaries need not agree.
+
+\input{review2_dense_summary}
+
+On UNSW, the historical Frozen/B spline is strongest by mean BA among the default spline policies: 96.29\%. Recent CAL64 selection lowers BA to 93.75\%, CAL256 to 95.42\%, and head/CAL64 to 93.22\%. Thus neither tested recent threshold adaptation nor head refitting improves BA over the historical policy on this capture. A higher recall under another policy remains possible at a larger false-alarm cost. This qualifies any claim that adaptation generally fails or succeeds independently of the chosen utility.
+
+\subsection{Calibration targets and precision--recall}
+Table~\ref{tab:fprtargets} evaluates common calibration FPR targets. These controllers supply a causal check independent of the $\lambda=1$ objective. Their realized FPRs must be examined before comparing recall: the same calibration target can produce different future false-alarm burdens. In particular, a small CAL64 sample and a changed score can miss the requested target substantially.
+
+\begin{table}[tb]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Requested calibration FPR versus achieved future rates for the spline score. Target and rates are percentages. Mean $\pm$ sample SD describes five randomizations of the same stream. Thresholds use only previously available normal labels.}
+\label{tab:fprtargets}
+\begin{tabular}{lr l rrr}\toprule
+Stream & Target & Controller & Recall & FPR & BA \\\midrule
+\tablerows{tables/review2_fpr_rows.tex}
+\bottomrule\end{tabular}
+\end{table}
+
+The $\lambda=1$ contrast alone cannot diagnose sampling noise as the cause. On TON, weighting valid calibration/next-block pairs by the next block's normal count gives calibration FPR 42.67\% and subsequent FPR 48.30\% at $\lambda=1$, versus 8.26\% and 13.20\% at $\lambda=2$. Thus the selected calibration policy already accepts many false alarms; the subsequent rates also reflect transfer. The diagnostic supplement compares calibration and subsequent-block errors and records the number of distinct normal scores. These measurements separate a policy that accepts many false alarms in its calibration objective from one that violates an intended FPR target after transfer. They do not identify a unique causal source of the observed shift.
+
+Figure~\ref{fig:pr} reports precision--recall at the actual causal operating points. TON's attack-dominated prevalence can yield high precision despite a large FPR. To make that dependence visible, the third panel uses the same class-conditional rates at hypothetical 1\% prevalence:
+\begin{equation}
+ \mathrm{precision}(\pi)=\frac{\pi\,\mathrm{recall}}{\pi\,\mathrm{recall}+(1-\pi)\,\mathrm{FPR}}.
+\end{equation}
+For example, the TON head at $\lambda=1$ yields 4.37\% precision at 1\% prevalence and 0.45\% at 0.1\%. These are conditional calculations, not predictions for a new network.
+
+\begin{figure}[tb]
+\centering\includegraphics[width=\linewidth]{figures/review2_precision_recall.pdf}
+\caption{Precision--recall operating points selected by the fixed cost grid. The first two panels use observed class counts. The last panel assumes that TON's class-conditional rates transfer to 1\% attack prevalence. Points are seed means conditional on each capture; they are not pooled adaptive-score PR curves.}
+\label{fig:pr}
+\end{figure}
+
+\subsection{Baseline quality changes the interpretation of learning}
+The frozen LR on TON has pooled D AUROC 0.318 and Frozen/B BA 25.50\%. We therefore audited attack-label orientation, the coefficient score, \code{decision_function}, attack probabilities, optimization convergence, and the cached score. The fixed-score A/B/D diagnostics are in Table~\ref{tab:audit}. An inversion on B or D is an observed transfer failure; it is not repaired by reversing scores using D labels. Consequently, the poor frozen LR is retained as a failure case rather than presented as a strong performance comparator.
 
 \begin{table}[tb]
 \centering\small
-\caption{Absolute final error counts: mean $\pm$ sample SD over five seeds. Noninteger means result from averaging integer counts. The paired differences in Table~\ref{tab:paired} retain the seed correspondence.}
-\label{tab:counts}
-\begin{tabular}{lrr}
-\toprule
-Trace & False negatives & False positives \\
-\midrule
-\tablerows{tables/counts_rows.tex}
-\bottomrule
-\end{tabular}
+\caption{Initial-model audit: pooled AUROC, mean $\pm$ seed SD conditional on each capture. A describes the training population and is not an out-of-sample estimate. The chronological and shuffled forests use the same sampled A rows.}
+\label{tab:audit}
+\begin{tabular}{llrrr}\toprule
+Stream & Initial model & A & B & D \\\midrule
+\tablerows{tables/review2_audit_rows.tex}
+\bottomrule\end{tabular}
 \end{table}
 
-The FIT192/B diagnostic displays the expected risk of retaining a threshold after changing the fitted sample and score scale. FIT192 / B reaches mean block AUROC $0.9359$, yet attack recall is only $8.81\%$ and FPR is $0.88\%$. The ranking improves on average, but the inherited threshold misses most attacks. Refitting with approximately balanced class quotas differs from fitting A, where about 94\% of observations are attacks. Under pure prior shift, the log-odds correction would be an intercept shift; here reweighted slopes and changing class-conditional traffic also contribute. Thus this control illustrates score--threshold mismatch rather than a newly discovered property of logistic models. With the same adapted scores and a recent threshold, FIT192 / CAL64 reaches recall $89.38\%$ and FPR $20.47\%$. Relative to FIT192 / B, this threshold change removes 2,610,759.8 mean false negatives at the cost of 60,637.6 additional false positives. Figure~\ref{fig:operating} shows the resulting operating-point changes.
+Against its own Frozen/CAL256 control, the TON LR head reduces FP in all five seeds and FN in four. The exception is seed 45, with 62,138 additional FN. This is an exploratory 4/5 joint-improvement count for a different learner and comparator; it does not overturn the failed historical spline criterion. Its interpretation also depends on the frozen LR's poor ranking. Similar head BA values for LR and splines conceal different starting points and error changes.
 
-\begin{figure}[tb]
-\centering\includegraphics[width=\linewidth]{figures/fig2_operating_points.pdf}
-\caption{Operating points on the same final replay. Points are seed means; bars show sample SD. Lines connect traces with identical score functions and different threshold policies, not a continuously optimized ROC curve. The large threshold effects coexist with a narrower primary comparison between the two CAL64 traces.}
-\label{fig:operating}
-\end{figure}
-
-\subsection{Primary paired comparison and the joint-error criterion}
-The primary contrast compares FIT192 / CAL64 with Frozen / CAL64. On all D, mean balanced accuracy improves by $13.28\pm2.26$ percentage points and mean block AUROC by $0.0823\pm0.0155$. Mean FP decreases by $81{,}355.4\pm6{,}051.6$. Mean FN decreases by $9{,}255.2\pm97{,}413.0$, corresponding to a recall difference of $0.29\pm3.01$ percentage points. Hence the average balanced-accuracy gain is predominantly associated with lower false-positive rates, while the missed-attack outcome is variable.
-
-The per-seed counts in Table~\ref{tab:paired} and Figure~\ref{fig:paired} show the limitation directly. All five seeds reduce FP on the full stream, but seeds 42 and 44 increase FN. Seeds 43, 45, and 46 improve both counts. The pre-specified four-of-five criterion is therefore not met. The sign of the mean FN change does not overturn that result, and the sample SD should not be read as a confidence bound supporting superiority.
+The initial chronological forest is also weak. On UNSW, seed 43 has a constant score, AUROC 0.5, and recall and FPR of 100\% at the historical threshold. Three other seeds have inverted pooled ranking. TON's frozen forest has pooled AUROC 0.40--0.46. Large adaptive-versus-frozen differences against these states cannot alone establish the superiority of a richer learner. Table~\ref{tab:arf} therefore includes the shuffled-A initialization and the disjoint-label feedback control, while retaining the original chronological results.
 
 \begin{table}[tb]
-\centering\small
-\caption{Primary paired differences, FIT192 / CAL64 minus Frozen / CAL64. Negative values indicate fewer errors. Seeds 43, 45, and 46 jointly improve FN and FP in both reporting scopes; seed 44 worsens both on A/B/C-unseen vectors.}
-\label{tab:paired}
-\begin{tabular}{crrrr}
-\toprule
- & \multicolumn{2}{c}{All D} & \multicolumn{2}{c}{A/B/C-unseen vectors} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-Seed & $\Delta$FN & $\Delta$FP & $\Delta$FN & $\Delta$FP \\
-\midrule
-\tablerows{tables/paired_rows.tex}
-\bottomrule
-\end{tabular}
+\centering\fontsize{8.7}{10.5}\selectfont\setlength{\tabcolsep}{3pt}
+\caption{Forest diagnostics, percentages as mean $\pm$ SD across five randomizations conditional on each capture. All policies share acquired labels; FIT-only uses a subset for learning and disjoint CAL64. Tree state is persistent and is not constrained to the head's example-memory contract.}
+\label{tab:arf}
+\begin{tabular}{lllrrr}\toprule
+Stream & Initial/feedback condition & Policy & Recall & FPR & BA \\\midrule
+\tablerows{tables/review2_arf_rows.tex}
+\bottomrule\end{tabular}
 \end{table}
 
-\begin{figure}[tb]
-\centering\includegraphics[width=\linewidth]{figures/fig3_paired_deltas.pdf}
-\caption{Primary paired differences by seed. Both axes show thousands of errors. Joint improvement requires a point in the lower-left quadrant (including a non-deteriorating boundary). The horizontal scales differ to make the much smaller unseen-vector FP changes visible.}
-\label{fig:paired}
+For the original chronological initialization, adaptive ARF/CAL256 reaches 90.39\% BA on TON, compared with 86.78\% for spline Frozen/CAL256 at $\lambda=2$ and 87.55\% for the spline head at $\lambda=2$. On UNSW it reaches 95.86\%, close to spline Frozen/CAL256 at $\lambda=1$ (95.42\%) and below spline Frozen/B (96.29\%). These are descriptive comparisons among the evaluated policies at equal acquisition budgets. Their different retained state and effective label use remain part of the result.
+
+\input{review2_findings}
+
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/review2_forest_operating_points.pdf}
+\caption{Forest operating policies under chronological and shuffled historical initialization. Connected points use the nine fixed cost weights, with thresholds selected from past labels. Stars mark the fixed historical B threshold. Means describe five randomizations on each stream; axis ranges differ. The frozen control uses CAL256 and the adaptive forest CAL64; the standard forest reuses CAL labels for learning and retains persistent tree state.}
+\label{fig:forest}
 \end{figure}
+Figure~\ref{fig:forest} places the forest comparisons in their operating regions. The historical-threshold point can outperform recent calibration on stable ranking, while an adaptive policy can help after poor transfer. A comparison at one weight, including an ARF comparison, remains a statement about the specified complete policies. The Supplement's CSV includes paired matched-error descriptions for these forests as well.
 
-\subsection{Previously unobserved vectors and concentration of the FP gain}
-For D vectors absent from A/B/C, FIT192 / CAL64 reaches $91.20\%$ attack recall but an FPR of $31.94\%$. The corresponding Frozen / CAL64 rates are $87.83\%$ and $33.99\%$. The paired BA gain is $2.71\pm3.63$ percentage points, substantially smaller than the full-stream gain. Mean FN decreases by $70{,}828.6\pm97{,}060.6$ and mean FP by $2{,}655.2\pm3{,}957.2$. Again, only three of five seeds jointly improve both counts.
 
-\begin{table}[tb]
-\centering\small
-\caption{Complementary overlap strata in the original campaign: mean $\pm$ seed SD. Rates are percentages. The same adaptive trajectory supplies both strata.}
-\label{tab:strata}
-\begin{tabular}{llrrr}
-\toprule
-Stratum & Trace & Recall & FPR & BA \\
-\midrule
-\tablerows{tables/strata_rows.tex}
-\bottomrule
-\end{tabular}
-\end{table}
+\subsection{Ranking heterogeneity and controller sensitivity}
+The frozen spline's TON macro block AUROC is 0.850, while weighting valid blocks by their normal counts gives 0.557. Blocks with few normal observations have disproportionate influence on the macro summary relative to their contribution to false-alarm workload. The normal-weighted statistic exposes weak average within-block separation under that weighting. It does not imply that every normal-heavy block is near chance, nor does AUROC alone determine FPR at a selected threshold. Both summaries, pooled fixed-score AUROC, blockwise AP, and coverage are retained in Supplement S4.
 
-The complementary seen stratum exposes the trade-off (Table~\ref{tab:strata}). Head adaptation lowers recall from 91.41\% to 86.02\%, while FPR falls from 55.96\% to 12.16\%. It adds 61,573.4 mean FN while removing 78,700.2 FP. In the unseen stratum it removes 70,828.6 FN and 2,655.2 FP. Thus the small full-stream mean FN reduction combines effects with opposite signs. The seen stratum contributes 96.7\% of the total FP reduction, but that percentage describes the location of FP savings rather than the fraction of all benefit caused by overlap. The strata differ in traffic composition and share one adaptive state.
+Controller robustness is assessed one factor at a time on both captures: FIT/CAL capacities 96/32 and 384/128; calibration ages 10 and 100 blocks; a minimum of ten CAL examples per class; and two additional fixed role salts. All five seeds are retained for every setting. These checks assess the declared controller rather than selecting a new best configuration. They complement the earlier TON delay and budget tests: at a 0.1\% query budget the default spline head reaches 57.49\% BA, compared with 79.48\% for Frozen/CAL256. Detailed rates, update counts, and conditional variation are reported in the Supplement.
 
-The factorial BA interaction is positive in every original full-stream seed: 10.76--17.65 percentage points, with mean 13.55. On unseen vectors it ranges from $-4.43$ to $+4.89$ points, with mean 1.24. The gain from jointly changing the head and threshold therefore depends on the reporting population. The four-trace interaction and the complementary-stratum decomposition reveal information concealed by a single average BA gain.
+\input{review2_sensitivity_summary}
+The salt dependence is substantial and differs between captures. A favorable individual partition should therefore not be reported as a stable model advantage. Across these eight head settings, UNSW BA remains below the historical frozen spline.
 
-\subsection{When limited labels prevent adaptation}
-Label availability creates a distinct temporal failure mode in the C development replay. There are 440 skipped update decisions, all associated with insufficient recent normal examples for calibration. The longest consecutive sequence spans decision blocks 241--663 and affects predictions in blocks 242--664: 423 blocks. Figure~\ref{fig:gating} shows the eligible normal-label count and the corresponding decision rates.
+\subsection{Historical Stage 1 and its numerical sensitivity}
+The archived TON campaign established the original motivation. With a frozen score, recent CAL64 raises recall from 21.11\% to 89.09\%, while FPR rises from 12.64\% to 46.74\%. Adding head refitting gives recall 89.38\% and FPR 20.47\%. Of the FP reduction, 96.7\% occurs on vectors previously observed in A/B/C, where recall decreases. The full-stream FN mean combines opposing seen/unseen changes. Only seeds 43, 45, and 46 improve both error counts, so the specified 4/5 criterion fails.
 
-\begin{figure}[tb]
-\centering\includegraphics[width=\linewidth]{figures/fig4_development_gating.pdf}
-\caption{Development interval C, seed 42. Shading marks prediction blocks 242--664, following 423 consecutive skipped update decisions. The upper panel shows the recorded number of recent normal examples in CAL64, with the minimum of five indicated. Recall and FPR are per-block values; undefined class-specific rates remain gaps. The display is descriptive and does not randomize the occurrence of skips.}
-\label{fig:gating}
-\end{figure}
+The same-query Linux numerical bridge changes that count from 3/5 to 2/5. Its paired FN differences are $+33{,}457$, $-115{,}004$, $+123{,}984$, $-45{,}794$, and $+47{,}576$ for seeds 42--46, respectively. The seed-46 change is largely associated with its frozen calibration trace. This sensitivity is evidence against treating a seed-count cutoff as an inferential conclusion. The original measurements remain historical evidence; the bridge is a separately fitted reconstruction, not bitwise replication. Full counts and provenance appear in Supplement S2--S3.
 
-Stratifying predictions by the preceding update decision yields opposite FN patterns. Across 474 blocks following applied updates, FIT192 / CAL64 has 29,697 fewer FN and 26,528 fewer FP than Frozen / CAL64. Across 440 blocks following skips, it has 263,032 more FN and 1,342 fewer FP. In the longest skipped segment alone, both counts worsen: FN increases by 219,608 and FP by 807. These are post hoc associations conditioned on the realized stream. The segments have different class composition and cannot establish that skipping caused the deterioration.
+\section{Discussion and limits}
+The defensible conclusion concerns the complete decision policy. Equal $\lambda$ comparisons are meaningful tests of two specified calibration procedures, but they cannot establish uniform superiority of their score functions. Matched-error descriptions and causal FPR-target controllers answer complementary questions. A strong evaluation should report the operating region, actual achieved rates, effective calibration evidence, and the quality of the frozen reference.
 
-The final D replay behaves differently. Of 354 recorded update opportunities per seed, 337, 351, 347, 341, and 350 are accepted for seeds 42--46, respectively. Their 17, 3, 7, 13, and 4 skips all occur before the first valid update. There is no recurrence of the long post-update starvation interval observed on C. Thus, the D evaluation confirms the four-trace outcome on a later stream, but it is not a second observation of the same long-skip phenomenon.
+The overlap result is similarly conditional. The first extension's $\lambda=1$ spline comparison locates 90.5\% of FP savings on previously seen vectors. This percentage describes where that policy saves false alarms. It is not the fraction of benefit caused by memorization, and it changes when the control or operating objective changes. Exact feature equality can merge distinct flows and miss near-duplicates. A tolerance-based or host/session analysis would require a separately justified identity definition; it is outside the present eight-feature recurrence claim.
 
-\subsection{Measured computation and its boundary}
-Table~\ref{tab:cost} gives recorded computational costs on the original evaluation machine: Windows 11, Python 3.13.2, NumPy 2.3.4, scikit-learn 1.7.2, an Intel processor reported as Family 6 Model 186 Stepping 3, 12 visible CPU threads, and 16,067.4 MiB of system RAM. These are elapsed times from one execution environment, not cross-device benchmarks.
+The two captures support controlled case-study conclusions. They do not estimate effectiveness across operational networks. Seed SDs, block summaries, and historical moving-block resampling all condition on the recorded streams. The original D structural checks and earlier project exposure are disclosed; new protocols and runner hashes are fixed before their respective diagnostic executions. Holding D labels out of controller decisions prevents look-ahead within replay, while the broader exploratory research history remains.
 
-\begin{table}[tb]
-\centering\small\setlength{\tabcolsep}{4.5pt}
-\caption{Recorded final-run costs in seconds. Fits and threshold-selection times are components included within replay time, not extra times to add to it. The final recorded update has no subsequent evaluated block.}
-\label{tab:cost}
-\begin{tabular}{crrrrrr}
-\toprule
-Seed & Updates & Skips & Head fit & Frozen threshold & Adapted threshold & D replay \\
-\midrule
-\tablerows{tables/cost_rows.tex}
-\bottomrule
-\end{tabular}
-\end{table}
+Feedback is also an assumption. At the 1\% budget, TON requires approximately 566 labels per recorded hour and UNSW approximately 1,288. Block-delay medians are about 3.50 and 6.45 minutes, respectively. These volumes and delays describe an annotation service, not a demonstrated analyst workflow. Labels are treated as correct. Active acquisition, noisy or asynchronous analyst feedback, and operational capacity estimation require new experiments. A deployment-specific $\lambda$ should be set from past evidence and declared costs or capacity, with an evaluation period kept separate.
 
-The five-seed command takes 1,234.388 seconds within its recorded timer boundary. This includes D hashing and loading, initial A fitting and B preparation, the five D replays, and writing the five per-seed reports. It excludes the earlier A/B/C hash calculation and final summary serialization. Within each replay, accumulated head-fitting time is 9.630--10.672 seconds; each of the two accumulated threshold-selection components is below 0.11 seconds. These observations support only the relative cost of these implementation components in this run. They do not establish an energy advantage, a device-level latency guarantee, or an embedded memory footprint.
-\FloatBarrier
-
-\input{extension_results}
-
-\section{Discussion}
-\subsection{The relevant result is conditional incremental benefit}
-The original TON campaign answers the question that motivated the study: a large recall recovery can be produced by moving a frozen detector's threshold, while the refitted head primarily changes false alarms. Yet the extension shows why this statement needs a specified comparator. Against a threshold fitted using all acquired labels, the spline head consistently sacrifices recall to reduce FP. On the separately collected UNSW capture, the same head instead increases recall slightly while increasing FP enough to lower BA. The useful finding is the location and direction of these conditional error changes, not a universal percentage of gain attributable to adaptation.
-
-Even a numerical ``share explained by the threshold'' is path-dependent in the four-trace design. The contrast Frozen/B to Frozen/CAL64 holds scores fixed, whereas FIT/B to FIT/CAL64 operates on a different score trajectory. Their BA interaction is large on full TON D and small on unseen vectors. Reporting both paths and the stronger CAL256 comparison is more informative than assigning one model-free percentage to threshold and weight learning.
-
-The seen/unseen decomposition adds a second qualification. In the original experiment, the average full-stream FN difference combines a recall loss on seen vectors with a gain on unseen vectors. In the stronger new comparison, both strata incur more FN on average. These are genuine changes in the error allocation induced by the tested policies. They do not establish memorization or prove that prior overlap caused the benefit: feature collisions, different class mixtures, and one shared adaptive trajectory remain possible contributors.
-
-\subsection{A threshold is part of the adaptive system}
-The FIT192/B trace should be understood as an intentionally diagnostic operating-point mismatch. Refitting on a class-balanced memory changes both the effective class prior and the fitted coefficients, so retaining a threshold chosen for the original score is not a strong deployment policy. The offset control and freely reselected threshold establish an exact invariance: an intercept change alone supplies no additional attainable decisions. A meaningful learning advantage must therefore appear beyond that adjustment and beyond a threshold controller with fair access to the acquired labels.
-
-Label eligibility is equally consequential. Independent CAL64 does not change the new main outcomes because its calibration requirement remains the limiting condition. CAL256 can use more of the acquired information and becomes particularly competitive when the query budget decreases. The low-budget and long-delay results suggest that an adaptive system should expose its recent per-class evidence and update status, rather than treating a configured annotation percentage as proof that useful updates are possible.
-
-\subsection{Interpreting operational costs}
-For attack prevalence $\pi$, holding recall $r$ and false-positive rate $f$ fixed gives
-\begin{equation}
- \mathrm{precision}(\pi)=\frac{\pi r}{\pi r+(1-\pi)f}.
-\end{equation}
-Using the new TON spline-head rates gives approximately 4.37\% precision at 1\% attack prevalence and 0.45\% at 0.1\%. These are illustrative base-rate calculations, conditional on class-conditional performance transferring to the hypothetical population. They are not deployment predictions. The same calculation can be performed for every supplied operating point, together with an explicitly stated traffic rate to obtain alerts per hour. Without that traffic rate and a justified cost ratio, BA does not identify an operational optimum.
-
-The annotation load is also substantial even at 1\%. Reducing it by a factor of ten causes the tested head controller to lose much of its recall. Acquisition, confirmation delay, model updates, and alarm review must therefore be accounted for together. Our experiment measures algorithmic error compromises under a declared feedback service; an operational study would additionally need reliable label arrival distributions and analyst costs.
-
-\subsection{A reusable evaluation checklist}
-The following reporting obligations follow directly from the comparisons:
-\begin{enumerate}
-\item Preserve the four combinations of frozen or adapted scores and historical or recent thresholds.
-\item Match acquired labels and delay, then disclose effective label use, memory retention, and whether fitting and threshold data overlap; include a threshold-only control using all acquired labels.
-\item Keep prediction before feedback, log query identities and earliest influence times, and report skipped updates with recent class counts.
-\item Report global FN/FP, class-conditional rates, ranking summaries with their denominators, and operating points selected only from past evidence.
-\item Separate row chronology, feature-vector overlap, attack families, and independent captures; retain unfavorable strata and previously specified acceptance criteria.
-\end{enumerate}
-This checklist does not prescribe a particular architecture or a single acceptance metric. It makes the claim being evaluated and the source of any observed improvement explicit.
-
-\subsection{Threats to validity}
-\textbf{Evidence stages and dependence.} The original TON procedure was fixed before its predictive campaign, but D had already been inspected structurally. The extension uses known TON outcomes to motivate new questions and is explicitly post hoc on that capture. UNSW provides a separate laboratory capture, not five independent environments. UNSW had appeared in companion project studies; the chronological protocol here is new, but the dataset is not an untouched resource in the broader project history. Five seeds quantify initialization and acquisition randomization; their SDs and the descriptive moving-block ranges do not establish uncertainty across operational networks. The role salt is fixed across seeds.
-
-\textbf{Historical exposure and representation.} An earlier project sample contains eight-feature matches to 889,093 TON D rows (25.05\%), separately from A/B/C overlap. The initial models here are refitted on A. During revision, the historical 211,043-row CSV was recovered from a public copy with the recorded SHA-256, closing the former missing-copy provenance issue; historical exposure itself remains. Exact equality in eight numerical features neither identifies an event nor detects approximate, session, or host dependence. The feature contracts omit many potentially informative fields, and the fixed spline functions cannot learn new interactions or extrapolate beyond their clipped ranges.
-
-\textbf{Feedback and operating assumptions.} Dataset labels are treated as correct. Analyst errors, adversarial feedback, and asynchronous individual label delays are outside the replay. Per-family reporting reduces binary aggregation but small families still support limited precision. The forest uses more persistent model state and reuses calibration labels in training, whereas the head experiment enforces disjoint roles. Equal query budgets must not be read as equal computational resources or equal estimator independence.
-
-\textbf{Numerical reproducibility.} The extension verifies all 23 TON source-file hashes, partition counts, overlap counts, and 710 original D block digests for row identity and labels. Rebuilding A through the unmodified original parser gives byte-identical output to the extension's parser. Nevertheless, the reconstructed NPZ hashes differ from the archived Windows arrays, and refitting in the current Linux environment does not reproduce every original per-seed prediction. The legacy-sampler bridge reports those differences explicitly; original and new results are never pooled. Preserving the new initial fitted models, per-block results, input-array digests, and pinned environment improves the reproducibility of this extension without retroactively claiming bitwise reproduction of the October run.
+Reproducibility has two levels. Original Windows reports are preserved and reanalyzed exactly, while the available Linux reconstruction does not reproduce every initial fit or prediction. The new extensions retain initial models, source hashes, input-array digests, full per-block reports, and pinned dependencies so that their recorded analyses and causal replays can be checked. A Git revision identifies the implementation; long-term archival deposition is a separate obligation.
 
 \section{Conclusions}
-Threshold adaptation is a strong alternative explanation for apparent gains from adaptive intrusion detection. In the original TON experiment, it accounts for most of the recall recovery along the frozen-score comparison, while head fitting mainly reduces FP on previously observed vectors. That aggregate benefit hides opposing FN effects across strata and fails the original joint-error criterion.
+Threshold policy materially changes the apparent value of score adaptation in these two captures. On TON, the large spline-head advantage at a single balanced-accuracy calibration point narrows or changes across operating regions. On UNSW, the historical frozen spline has higher mean BA than the tested default threshold or head updates. Weak frozen LR and forest initializations further show why an adaptive-versus-frozen difference requires a baseline-quality audit. After shuffled initialization, the forest retains a TON advantage at a common FPR under its more permissive state and label-use contract. On UNSW, its frozen historical policy has higher BA than its tested recent-threshold and learning policies. The two captures therefore support model- and policy-specific conclusions.
 
-Stronger controls make the result more precise. With the full acquired-label budget available to the threshold-only detector, the spline head exchanges recall for fewer false alarms on TON in every seed. On the separate UNSW capture, the same head yields a small recall gain but substantially more false alarms, and the frozen historical spline detector remains competitive. ARF shows substantial benefit beyond its own frozen threshold control, demonstrating that the learning contribution depends on the model and its retained state. Linear and forest baselines, explicit cost-weighted operating points, and feedback sensitivity place these findings in a broader comparison. The resulting contribution is a reproducible way to identify when learning changes a useful error compromise beyond threshold adjustment, and when it does not.
+The useful output is a reproducible evaluation procedure: match acquisition and feedback, disclose effective label use and retained state, examine more than one operating point, audit initial scores, and separate algorithmic randomization from independent-stream evidence. These checks support specific claims about error compromises and identify which broader claims would need new captures.
 
 \section*{Data and code availability}
-TON\_IoT and UNSW-NB15 are supplied by UNSW under the academic-use conditions on their dataset pages \citep{toniotweb,unswweb}. This study uses the network CSVs, downloaded through hash-identified public mirrors. Related TON dataset, telemetry, operating-system, architecture, and botnet publications are acknowledged as requested by the provider \citep{alsaedi2020,moustafa2020windows,moustafa2020linux,moustafa2019dataset,moustafa2019fog,ashraf2021}. The additional UNSW-NB15 attribution papers are also cited \citep{moustafa2019geometry,moustafa2017dirichlet,sarhan2021}; their algorithms are not imported as experimental observations.
-
-The original campaign executed repository commit \href{https://github.com/emanuelepiodebernardis/kan-ids-v2/commit/ea216914f756433fe69fd825146de5c1e325cbd8}{\code{ea21691}}; its retained evidence snapshot is \href{https://github.com/emanuelepiodebernardis/kan-ids-v2/commit/81d99d9020d60b39d3b5a65fc6f06296f89537db}{\code{81d99d9}} \citep{repository2026}. The supplied Git bundle retains the local pre-run protocol (\code{f4ec381}) and runner (\code{178e069}) history. The complete experimental evidence is published in \href{https://github.com/KuznetsovKarazin/kan-ids-v2/commit/54871f0f36b22a69fe9a114a617d957b896da7b1}{\code{54871f0}}, with a tree identical to the local evidence commit \code{33341bc}. The accompanying revision package supplies the protocol, runner, tests, pinned dependencies, input manifests, all complete per-seed reports, initial-model artifacts, analysis CSVs, figure code, and a versioned integration patch. Raw network data are not redistributed. The reproducibility README separates rebuilding the paper from reconstructing data and rerunning experiments. A permanent public archival identifier has not been minted and must not be inferred from the Git commit identifiers.
+TON\_IoT and UNSW-NB15 are used under their providers' academic-use conditions \citep{toniotweb,unswweb}. Raw network data are not redistributed. Source hashes, parser versions, and attribution details are supplied with the code and in the Supplement. The historical executed commit is \code{ea21691}, with retained evidence at \code{81d99d9}. First-extension code and results are at \href{https://github.com/KuznetsovKarazin/kan-ids-v2/commit/54871f0f36b22a69fe9a114a617d957b896da7b1}{\code{54871f0}}. Second-review code and results at \href{https://github.com/KuznetsovKarazin/kan-ids-v2/commit/dd9e0ea8bb2d8c9d8283e752e8a059b104291390}{\code{dd9e0ea8}} add the versioned protocol, runner, baseline audits, all diagnostic reports, analysis tables, fitted shuffled initial states, and integration instructions on the \href{https://github.com/KuznetsovKarazin/kan-ids-v2/tree/paper2/review-extension-20261101/adattamento-drift/review_extension}{revision branch}. Its delivery manifest records the exact final commit. Building the paper from recorded evidence is separate from downloading the input data and replaying predictions. A permanent public archival identifier has not yet been registered. The supplied deposit metadata and complete versioned package support archival submission, but do not substitute for an archived record. This remains an explicit requirement before a claim of durable public availability.
 
 \section*{Author contributions and declarations}
-\noindent\textbf{CRediT statement for author review.} Oleksandr Kuznetsov: Conceptualization, Methodology, Supervision, Validation, Writing---original draft, Writing---review and editing. Emanuele Pio De Bernardis: Software, Investigation, Data curation, Validation, Visualization, Writing---original draft, Writing---review and editing. The statement describes the documented division of the original project work; both authors retain responsibility for reviewing the extended experiments and final text.
+\noindent\textbf{CRediT statement for author review.} Oleksandr Kuznetsov: Conceptualization, Methodology, Supervision, Validation, Writing---original draft, Writing---review and editing. Emanuele Pio De Bernardis: Software, Investigation, Data curation, Validation, Visualization, Writing---original draft, Writing---review and editing. Both authors must review the extended experiments and final interpretation.
 
-\noindent\textbf{Funding and competing interests.} Study-specific declarations have not yet been supplied by the authors. They require author completion before journal submission; no funding source or absence of competing interests is inferred from other projects.
+\noindent\textbf{Funding and competing interests.} Study-specific declarations require author confirmation before submission; none is inferred from unrelated projects.
 
-\noindent\textbf{Ethics and data use.} The work analyzes existing research datasets and involves no new participant recruitment or live-network attack deployment. Dataset attribution and use conditions are retained.
+\noindent\textbf{Ethics and data use.} The work uses existing research datasets, without new participant recruitment or live-network attack deployment.
 
-\noindent\textbf{AI-assisted work.} ChatGPT/Codex assisted with literature organization, manuscript revision, LaTeX preparation, implementing and executing the additional experiments, numerical audits, and figure generation. The experiment artifacts record the executed code and environment. The human authors must review and take responsibility for the scientific interpretation, references, authorship, and submission declarations.
-
-\appendix
-\section{Implementation details and reproducibility map}
-\label{sec:implementation}
-\subsection{Immutable roles and retained examples}
-The role hash is SHA-256 over the ASCII salt \code{ADAPT04-C-seed42-v1}, a zero byte, and the eight raw feature values encoded as little-endian float64. Both signs of zero are normalized to positive zero; NaNs are canonicalized. The digest is interpreted as a big-endian integer and assigned to CAL if its remainder modulo four is zero, otherwise to FIT. The salt's historical seed label is literal: the same salt is used for every final seed. Each requested observation retains its assigned role. Stored model inputs are transformed only when its label arrives; the role digest continues to identify the raw vector.
-
-For chronological overlap, the separately defined fingerprint is SHA-256 over the 32 bytes of the eight stored float32 inputs in little-endian order. This predicate checks equality at the stored feature precision. It is not an event-identity test. The two hashing procedures have different purposes and must not be substituted for one another in reproduction.
-
-Calibration age is measured from the observation block, not from the arrival block. Repeated vectors can occupy multiple positions in a role memory; the five-per-class minimum counts observations, not unique vectors. Class quotas determine eviction when capacity is exceeded; an age filter determines which retained CAL64 entries are eligible for threshold selection. FIT192 has no age filter. Pending requests are maintained separately from both memories.
-
-\subsection{Ordering and end-of-stream accounting}
-For each block, the runner (i) transforms and scores records using the incoming state, (ii) records the four decision outcomes for the evaluator, (iii) requests labels without using their values, (iv) receives the previous block's requested labels, (v) updates memories, and (vi) attempts an atomic transaction for the next block. Labels from a predicted block do not affect any predictions within that block.
-
-There are 355 prediction blocks but 354 update opportunities because no requested labels arrive at the end of block zero. A decision at the end of the final block is recorded and timed, although its resulting state has no subsequent evaluated block. The last 99 requested labels remain pending. This boundary explains why counts of decisions and counts of affected prediction blocks differ. Likewise, the C temporal stratification excludes the two initial prediction blocks without a preceding delayed-label decision.
-
-\subsection{Artifact entry points}
-The following paths are relative to \code{adattamento-drift/ton_temporal/} in the repository snapshot. They provide a direct map from the manuscript to implementation and evidence:
-\begin{itemize}\raggedright
-\item \code{replay.py}: fixed transformation, additive spline model, logistic head refitting, sampling, and class-aware memory.
-\item \code{soglia_bilanciata.py}: strict-threshold convention, candidate construction, exact comparison, and lower-median tie rule.
-\item \code{calibrazione_recente.py}: immutable roles, recent-label eligibility, and atomic transaction.
-\item \code{replay_validazione_finale.py}: five-seed final replay, paired traces, overlap mask, and aggregate metric definitions.
-\item \code{split_manifest.json} and \code{sovrapposizioni_abcd.json}: chronology, counts, historical exposure, and cross-partition vector checks.
-\item \code{articolo_02/protocollo_validazione_finale.md}: protocol fixed before the final predictive campaign.
-\item \code{articolo_02/validazione_finale_D/analisi_finale.json}: absolute metrics, paired differences, temporal summaries, and measured costs.
-\item \path{adapt04_calibrazione_recente/replay_completo/confronto_per_blocco.csv}: C per-block evidence used in Figure~\ref{fig:gating}.
-\end{itemize}
-The manuscript package retains these original summaries and the initial Methods/Results draft. The accompanying extension package adds the complete reports and model artifacts described in Appendix~\ref{sec:extras}. Rebuilding figures is separate from reconstructing raw data and rerunning the predictive campaign.
+\noindent\textbf{AI-assisted work.} ChatGPT/Codex assisted with literature organization, scientific editing, implementation and execution of diagnostic experiments, numerical checks, and figure preparation. Code and environment records are supplied. Human authors remain responsible for the interpretation, references, authorship, and submission declarations.
 
 \FloatBarrier
-\input{extension_appendix}
-\FloatBarrier
-\begingroup\small\raggedright
-\bibliographystyle{unsrtnat}
-\bibliography{references}
+\begingroup\footnotesize\raggedright
+\bibliographystyle{unsrtnat}\bibliography{references}
 \endgroup
 \end{document}

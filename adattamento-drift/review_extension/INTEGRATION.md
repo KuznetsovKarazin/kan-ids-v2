@@ -53,6 +53,10 @@ The current results archive supplies a Git bundle as its complete transport.
 It includes model states and recorded evidence once, avoiding duplicate large
 binary patches. The small CSV previews are also directly accessible in the ZIP.
 
+The second-review code/results commit is `dd9e0ea8bb2d8c9d8283e752e8a059b104291390`. Its tree matches
+local evidence commit `7538cf0869fb713efc247703a1d5d8b12bef1a4b`.
+The subsequent manuscript commit is recorded in the external delivery manifest.
+
 ## What plugs into the existing code
 
 `review_extension/experiment.py` imports the unchanged `ton_temporal/replay.py`,

@@ -1,13 +1,17 @@
-Paper 2 revision — 1 November 2026
+Emanuele: second-review revision, 1 November 2026
 
-The original October campaign remains immutable. This revision adds 55
-post-review runs and reframes the paper around conditional FN/FP trade-offs.
-The full experiment package includes INTEGRATION.md with Git-bundle import,
-reproduction commands and an explicit map to the existing replay interfaces.
-REVIEW_RESPONSE.md maps every available review comment to evidence.
+Read main.pdf and the separate supplement.pdf. The title and main conclusion
+now concern operating-policy trade-offs in two captures. Preserve the weaker
+claims: the lambda=1 FPR difference is not curve-wide superiority; LR and ARF
+initial states require quality audits; seeds are conditional on each stream.
 
-Please review the new interpretation, initial-state provenance bridge,
-ARF memory/calibration contract, second-capture scope, and authorship/funding/
-competing-interest declarations. Do not substitute the new runs for the
-original five seeds. The original four-of-five criterion remains unsuccessful.
-The manuscript compiles from the supplied files without training or raw data.
+The accompanying code/results package contains all 120 diagnostic cells,
+including 30 exact main-trajectory checks, plus the untouched earlier 55 runs.
+Use INTEGRATION.md for Git import, replay and numerical verification. Read
+REVIEW_RESPONSE.md for the three current reviews and explicit disagreements.
+No reviewer outcome has been omitted. Do not replace historical measurements
+with the Linux bridge. Shipped model states support reproducible extensions.
+
+Please confirm authorship, CRediT, study-specific funding and competing
+interests before journal submission. The archive metadata is prepared, but
+no permanent public archival record/DOI is claimed until actually published.
