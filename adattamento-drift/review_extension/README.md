@@ -1,4 +1,4 @@
-# Paper 2: second-review article, diagnostics and integration package
+# Paper 2: matched-memory article, diagnostics and integration package
 
 This extension answers **what learning changes beyond a recent threshold, and
 where the resulting FN/FP trade-off occurs**. Read `PROTOCOL.md` before using
@@ -6,6 +6,20 @@ the results. The original October campaign and the November extension are
 distinct evidence stages. The extension contains 55 complete runs: 30 main
 dataset/model/seed combinations, five legacy-query bridges, fifteen additional
 delay runs, and five low-budget runs.
+
+## Matched-memory extension
+
+`review3/` adds ten spline replays (both captures, five seeds) crossing frozen
+and adapted scores with disjoint CAL-role64 and CAL-role256. Each paired score
+comparison holds calibration observations, objective and update times fixed.
+The original FIT192 head trajectory is unchanged. The larger calibration buffer
+increases retention to 448 examples, without extra acquisition or FIT/CAL reuse.
+It must not be confused with the earlier all-label Frozen/CAL256 controller.
+
+The final replay runner was fixed at `efe004e`; the original protocol is
+`9213001`. Initial setup failures and corrections are recorded in
+`review3/provenance/execution.json`; all ten retained reports are complete.
+Every shared block trajectory agrees exactly with the earlier diagnostic run.
 
 ## Second-review extension
 
@@ -73,6 +87,7 @@ python -m venv .venv-review
   --original adattamento-drift/review_extension/original_reports \
   --out adattamento-drift/review_extension/analysis
 .venv-review/bin/python adattamento-drift/review_extension/review2/analyze.py
+.venv-review/bin/python adattamento-drift/review_extension/review3/analyze.py
 ```
 
 `main.tex`, `supplement.tex` and the generated tables/figures do not require raw data to compile.
@@ -147,18 +162,39 @@ parameter-sensitivity cells retain AUC and confusion counts. Logs and source
 hashes of the excluded AP-guard attempt are documented in `review2/provenance`.
 Only the corrected results are shipped as final evidence.
 
+To replay the matched-memory controls after rebuilding the saved spline caches:
+
+```bash
+for ds in ton unsw; do
+  for seed in 42 43 44 45 46; do
+    $PY $EXT/review3/runner.py --data /path/to/data/$ds \
+      --cache-root /path/to/cache --seed "$seed" \
+      --out /path/to/review3-rerun/${ds}_spline_${seed}.json.gz
+  done
+done
+$PY $EXT/review3/analyze.py --results /path/to/review3-rerun \
+  --out /path/to/review3-analysis
+```
+
+The matched replay verifies shared decisions against the retained `review2`
+reports during execution. It preserves the same numerical environment and
+initial models; a new initial fit is a different experiment. Analysis exports
+all cost weights and targets, paired score and memory effects, and missing
+common-support results without extrapolation.
+
 ## Validation and interpretation
 
 ```bash
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-review/bin/python -m pytest -q \
   adattamento-drift/review_extension/test_experiment.py \
   adattamento-drift/review_extension/review2/test_runner.py \
+  adattamento-drift/review_extension/review3/test_matched_memory.py \
   adattamento-drift/ton_temporal/test_calibrazione_recente.py \
   adattamento-drift/ton_temporal/test_soglia.py \
   adattamento-drift/ton_temporal/test_replay_validazione_finale.py
 ```
 
-The recorded targeted suite has 89 passing tests (76 earlier tests plus 13 new diagnostics). Analysis verifies every
+The recorded targeted suite has 93 passing tests (89 earlier tests plus four matched-memory invariants). Analysis verifies every
 block/stream count reconciliation, seen+unseen decomposition, common query
 sequence, and intercept/threshold invariance. Original source CSV hashes and
 all 710 D row/label block digests match. A reconstruction using the unmodified
@@ -175,7 +211,9 @@ summarize recorded errors without refitting the adaptive state; they are not
 generalization confidence intervals. Runtime logs include offline caching and
 are not embedded-device latency measurements.
 
-The authors still need to supply study-specific funding/competing-interest
-declarations and approve authorship before submission. No archival DOI has
-been fabricated. The machine-readable evidence and integration commit are
-ready for publication in the project repository and a suitable research archive.
+The manuscript discloses GAIA support and related interests. The author team
+must verify its contribution and disclosure statements before submission; only
+documented organizational roles are currently assigned to the added third
+author. No archival DOI has been fabricated. The complete evidence package
+and deposit metadata are prepared, with archival publication still pending.
+The journal LaTeX ZIP excludes internal review responses and handover notes.

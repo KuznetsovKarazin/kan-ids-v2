@@ -13,4 +13,6 @@ validation=json.loads((root/'analysis/validation.json').read_text())
 assert validation['complete'] and validation['runs']==55
 review2=json.loads((root/'review2/analysis/validation.json').read_text())
 assert review2['complete'] and review2['runs']==120 and review2['exact_repeat_trajectories']==30
-print(f"Verified {len(manifest['sha256'])} file hashes; 55 first-extension and 120 second-review cells present.")
+review3=json.loads((root/'review3/analysis/validation.json').read_text())
+assert review3['complete'] and review3['runs']==10 and review3['all_shared_trajectories_exact']
+print(f"Verified {len(manifest['sha256'])} file hashes; 55 first-extension, 120 second-review and 10 matched-memory cells present.")

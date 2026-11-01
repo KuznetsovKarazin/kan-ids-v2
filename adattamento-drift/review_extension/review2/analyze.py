@@ -294,6 +294,7 @@ The mean-curve and paired-seed summaries describe different operations. At 13\% 
                 for x,y,l in points:
                     if l in (1,2):ax.annotate(f'$\\lambda={l:g}$',(x,y),xytext=(4,5 if l==1 else -13),textcoords='offset points',fontsize=8)
         ax.set_title(title);ax.set_xlabel('Achieved FPR (%)');ax.grid(alpha=.2)
+        ax.text(.98,.03,'Axis ranges differ',transform=ax.transAxes,ha='right',va='bottom',fontsize=8,bbox=dict(facecolor='white',edgecolor='none',alpha=.85))
     axes[0].set_ylabel('Achieved attack recall (%)')
     fig.legend(*axes[0].get_legend_handles_labels(),loc='lower center',ncol=2,frameon=False,bbox_to_anchor=(.5,-.08));fig.tight_layout()
     for ext in ('pdf','png'):fig.savefig(figs/f'review2_operating_points.{ext}',bbox_inches='tight',dpi=190)
@@ -325,6 +326,7 @@ The mean-curve and paired-seed summaries describe different operations. At 13\% 
             q=select(ds,'arf',cond,'frozen_b')
             if len(q)==5:ax.plot(100*q.fpr.mean(),100*q.recall.mean(),'*',ms=10,color='#363E45',label='Frozen ARF / B')
             ax.set_title(ds.upper()+(': chronological A' if cond=='main' else ': shuffled A'))
+            ax.text(.98,.03,'Axis ranges differ',transform=ax.transAxes,ha='right',va='bottom',fontsize=8,bbox=dict(facecolor='white',edgecolor='none',alpha=.85))
             ax.set_xlabel('Achieved FPR (%)');ax.set_ylabel('Attack recall (%)');ax.grid(alpha=.2)
     fig.legend(*axes[0,0].get_legend_handles_labels(),loc='lower center',ncol=3,frameon=False,bbox_to_anchor=(.5,-.04))
     fig.tight_layout()

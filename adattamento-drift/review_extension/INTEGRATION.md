@@ -7,10 +7,10 @@ October reports. The base is `81d99d9020d60b39d3b5a65fc6f06296f89537db`.
 ## Import the complete revision
 
 The online delivery branch is `paper2/review-extension-20261101` in
-`KuznetsovKarazin/kan-ids-v2`. It contains the first-extension commits and new second-review code/results
+`KuznetsovKarazin/kan-ids-v2`. It contains the first-extension commits and second-review and matched-memory code/results
 and manuscript commits. The delivery manifest records the exact final heads. The Git bundle also retains the original local development
 history as `paper2/local-protocol-history` and the new pre-run history as
-`paper2/review2-protocol-history`; this preserves the protocol and
+`paper2/review2-protocol-history` and `paper2/review3-protocol-history`; this preserves the protocol and
 runner commits made before the new outcomes were inspected. From your existing `kan-ids-v2` checkout:
 
 ```bash
@@ -83,7 +83,7 @@ interfaces, preserving the historical campaign behavior.
 ## Reproduce and check
 
 Follow `README.md` for the pinned environment and input reconstruction. First
-run the 89-test targeted suite (include `review2/test_runner.py`). Rebuild saved-evidence analysis with:
+run the 93-test targeted suite (include `review2/test_runner.py` and `review3/test_matched_memory.py`). Rebuild saved-evidence analysis with:
 
 ```bash
 PY=.venv-review/bin/python
@@ -92,6 +92,7 @@ $PY $EXT/manuscript/build_assets.py
 $PY $EXT/analyze.py --results $EXT/results \
   --original $EXT/original_reports --out $EXT/analysis
 $PY $EXT/review2/analyze.py
+$PY $EXT/review3/analyze.py
 cd "$EXT/manuscript"
 make all
 ```
@@ -119,7 +120,28 @@ cache lookup accepts the supplied `arf_shuffled_<seed>` folders. Use the same
 The FIT-only forest learns only FIT-role arrivals and calibrates on CAL64;
 it retains persistent trees and must not be described as equal-memory.
 
-Before journal submission, both authors must approve interpretation and
-authorship, supply funding and competing-interest declarations, select the
-journal's required format, and deposit the complete package if a permanent
-archival identifier is needed. Those facts cannot be inferred from code.
+## Matched-memory controls
+
+`review3/runner.py` reuses the original FIT192/CAL64 head trajectory and adds
+frozen/head pairs on identical CAL-role64 and CAL-role256. Keep all four
+thresholds on the original successful-transaction gate. The larger CAL memory
+accepts CAL-role arrivals only and remains disjoint from FIT. Retain the
+independent all-label frozen controller as a separate, stronger information
+contract. Its difference from CAL-role256 is not a capacity effect.
+
+On TON, the head's FPR reduction persists within each matched-memory pair.
+A larger head CAL memory improves default BA by 1.83 points, while changing
+which labels may enter calibration can have a much larger effect. On UNSW,
+the matched score contrast changes sign with capacity, but historical Frozen/B
+remains stronger. Keep all FPR-target violations and unsupported interpolation
+points; do not turn the nearby 18.37%/19.95% FPR pair into an exact match.
+
+The recorded protocol history starts at `9213001`; the executed runner is
+`efe004e`. `review3/provenance/execution.json` identifies source hashes and
+excluded startup checks. All ten retained runs and 93 targeted tests pass.
+
+All three authors must verify their contribution and disclosure statements
+before submission. GAIA support and documented relationships are now stated;
+no unsupported scientific contribution is assigned to Frontoni. Use the clean
+LaTeX ZIP for submission, not the full integration ZIP with internal review
+notes. Permanent archival deposition remains a distinct publication step.
