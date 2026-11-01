@@ -11,4 +11,6 @@ for name,expected in manifest['sha256'].items():
     if actual!=expected:raise SystemExit('HASH MISMATCH: '+name)
 validation=json.loads((root/'analysis/validation.json').read_text())
 assert validation['complete'] and validation['runs']==55
-print(f"Verified {len(manifest['sha256'])} file hashes; all 55 protocol runs present.")
+review2=json.loads((root/'review2/analysis/validation.json').read_text())
+assert review2['complete'] and review2['runs']==120 and review2['exact_repeat_trajectories']==30
+print(f"Verified {len(manifest['sha256'])} file hashes; 55 first-extension and 120 second-review cells present.")
