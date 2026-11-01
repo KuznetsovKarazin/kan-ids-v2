@@ -1,7 +1,8 @@
 # Materiali per il secondo articolo
 
-Questa cartella organizza le evidenze gia' verificate di ADAPT-01--04. Non
-contiene nuovi training o replay e non usa D.
+Questa cartella organizza le evidenze gia' verificate di ADAPT-01--04 e la
+validazione finale gia' eseguita su D. I materiali documentali non avviano
+nuovi training o replay.
 
 - `tabella_evidenze.csv`: confronti appaiati e gruppi di comparabilita'.
 - `appendice_evidenze.md`: tabella leggibile, regole di confronto e provenienza.
@@ -11,16 +12,33 @@ contiene nuovi training o replay e non usa D.
 - `../replay_validazione_finale.py`: runner congelabile per le quattro tracce.
 - `../test_replay_validazione_finale.py`: controprove sintetiche, senza D.
 - `manifest.json`: SHA-256 di fonti e prodotti.
+- `validazione_finale_D/`: rapporto, aggregazioni e manifest della campagna
+  finale verificata.
+- `manuscript_methods_results.md`: prima bozza manuale delle sole sezioni
+  Materials and Methods e Results.
+- `manuscript_assets/`: due tabelle, due figure e manifest riproducibile della
+  bozza.
+- `../genera_materiali_manoscritto.py`: generatore che legge soltanto JSON e
+  manifest versionati; non apre i flussi e non esegue fit o replay.
 
 ## Riproduzione
 
 Dalla cartella `adattamento-drift/ton_temporal`:
 
 ```powershell
+cd <repo>/adattamento-drift/ton_temporal
 python costruisci_materiali_articolo_02.py
 python -m pytest test_materiali_articolo_02.py -q
 python -m pytest test_replay_validazione_finale.py -q
+python genera_materiali_manoscritto.py
+python -m pytest test_materiali_manoscritto.py -q
 ```
+
+Il manifest degli asset verifica con dimensione e SHA-256 i byte esatti della
+consegna. In una rigenerazione, CSV, Markdown e SVG sono confrontati byte per
+byte; il PNG e' confrontato sui pixel RGBA decodificati, perche' la compressione
+puo' cambiare fra ambienti senza modificare l'immagine. Il manifest registra
+Python, NumPy, Matplotlib, Pillow, backend e piattaforma usati dal generatore.
 
 I raw completi devono essere presenti nella cartella documentata
 `../archivio_esterno/`. Il generatore non li modifica. I riepiloghi versionati
