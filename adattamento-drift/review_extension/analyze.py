@@ -58,6 +58,7 @@ def main():
     p.add_argument('--out',type=Path,required=True);p.add_argument('--allow-incomplete',action='store_true')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=True)
     manuscript=HERE/'manuscript';tables=manuscript/'tables';figs=manuscript/'figures'
+    tables.mkdir(parents=True,exist_ok=True);figs.mkdir(parents=True,exist_ok=True)
     reports={};checks=[];rows=[]
     for path in sorted(a.results.glob('*.json.gz')):
         r=load(path);cond=path.name.split('_')[-1].split('.')[0]

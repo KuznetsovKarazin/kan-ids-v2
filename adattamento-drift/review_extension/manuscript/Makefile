@@ -1,0 +1,7 @@
+.PHONY: all figures clean
+all:
+	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+figures:
+	python build_assets.py
+clean:
+	latexmk -c main.tex

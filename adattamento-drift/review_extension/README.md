@@ -66,6 +66,7 @@ Use external working directories, so raw traffic is not committed to Git.
 ```bash
 PY=.venv-review/bin/python
 EXT=adattamento-drift/review_extension
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 $PY $EXT/fetch_data.py ton --out /path/to/downloads
 $PY $EXT/fetch_data.py unsw --out /path/to/downloads
 $PY $EXT/prepare_data.py ton --raw /path/to/downloads/ton_raw --out /path/to/data/ton

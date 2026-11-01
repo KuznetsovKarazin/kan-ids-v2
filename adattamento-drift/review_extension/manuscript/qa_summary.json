@@ -1,0 +1,24 @@
+{
+  "pages": 27,
+  "references": 39,
+  "figures": 6,
+  "tables": 16,
+  "original_arithmetic_checks": 130,
+  "extension_analysis_checks": 2780,
+  "new_complete_runs": 55,
+  "targeted_tests_passed": 76,
+  "D_row_label_digest_checks": 710,
+  "undefined_references": 0,
+  "overfull_boxes": 0,
+  "out_of_page_text_words": 0,
+  "pdf_links": 114,
+  "visual_review": "All 27 pages rendered and inspected; revised plot labels and signed differences checked.",
+  "data_reconstruction": "All 23 TON source hashes and 710 original D block identity/label digests match; original A parser matches rebuilt A bytes.",
+  "scope": "New experiments executed; original October outcomes preserved separately.",
+  "open_author_facts": [
+    "Funding",
+    "Competing interests",
+    "Final author/CRediT approval",
+    "Journal requirements and archival DOI"
+  ]
+}

@@ -6,8 +6,11 @@ October reports. The base is `81d99d9020d60b39d3b5a65fc6f06296f89537db`.
 
 ## Import the complete revision
 
-The delivered Git bundle contains branch `paper2/review-extension-20261101`
-and its commits. From your existing `kan-ids-v2` checkout:
+The online delivery branch is `paper2/review-extension-20261101` in
+`KuznetsovKarazin/kan-ids-v2`. It contains a results/code commit and the manuscript
+delivery commit. The Git bundle also retains the original local development
+history as `paper2/local-protocol-history`; this preserves the protocol and
+runner commits made before the new outcomes were inspected. From your existing `kan-ids-v2` checkout:
 
 ```bash
 git bundle verify /path/to/Paper2_review_extension.bundle
@@ -25,11 +28,20 @@ git switch -c paper2/integrate-review main
 git cherry-pick $(git rev-list --reverse 81d99d9..paper2/review-extension-20261101)
 ```
 
-The bundle and series intentionally retain the protocol commit `f4ec381`,
+The bundle additionally carries the local-history ref. Import it when auditing
+protocol timing:
+
+```bash
+git fetch /path/to/Paper2_review_extension.bundle \
+  paper2/local-protocol-history:paper2/local-protocol-history
+```
+
+That history retains the protocol commit `f4ec381`,
 created before inspecting the new predictive outcomes. `178e069` contains the
 executed runner; `19892b0` corrects the test for River's benign metric-dictionary
-cache behavior. The delivery manifest lists the later evidence and manuscript
-commits. The reports also carry the exact SHA-256 of the executed runner.
+cache behavior. The published results commit is `54871f0f36b22a69fe9a114a617d957b896da7b1`,
+whose tree exactly matches local evidence commit `33341bc`. The delivery manifest
+lists both histories and the final manuscript commit. The reports also carry the exact SHA-256 of the executed runner.
 
 If importing an email-format patch series instead, use the supplied numbered
 patches with `git am` on a clean branch at the same base. Do not apply both the

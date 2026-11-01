@@ -1,0 +1,60 @@
+\subsection{Post-review extension: stronger controls and operating costs}
+\label{sec:extensiondesign}
+The extension protocol was committed before its new predictive runs. It retains seeds 42--46, 10,000-row blocks, and the original memory rules. A new sampler uses \code{SeedSequence([seed, block, 20261101])}; all methods receive identical requested row IDs within each condition. A separate legacy-sampler replay provides a bridge to the earlier campaign. The original numbers remain reported as originally measured, rather than being overwritten by reruns.
+
+Table~\ref{tab:extensiondesign} distinguishes the comparisons. CAL256 has quotas of 128 observations per class, accepts every acquired label, and uses the same 50-block age limit and five-per-class eligibility minimum. Independent CAL64 removes only the head-fitting eligibility condition. These controls separate equality of acquired-label budgets from equality of the labels actually used by an algorithm.
+
+\begin{table}[tb]
+\centering\small
+\caption{Additional controls. Every row shares the acquisition budget and label delay. Retained examples exclude model state and the pending-label queue.}
+\label{tab:extensiondesign}
+\begin{tabularx}{\linewidth}{lXX}
+\toprule
+Controller & Learning information & Threshold information and eligibility \\
+\midrule
+Frozen / independent CAL64 & None & CAL-role labels; independent CAL gate \\
+Frozen / CAL256 & None & All queried labels; independent CAL gate \\
+Offset / B or CAL64 & FIT192; one fitted intercept offset & B or disjoint CAL64; matched head gate \\
+Prior-centred / CAL64 & FIT192; eight weights and intercept & Disjoint CAL64; matched head gate \\
+LR / FIT192 / CAL64 & FIT192; eight linear weights and intercept & Disjoint CAL64; matched head gate \\
+ARF / CAL64 & Every arriving queried label, once & CAL-role labels, also used for learning; independent CAL gate \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The offset control minimizes logistic loss for $s_0(x)+c$ on FIT192. With a freely selected threshold, $s_0(x)+c>\tau+c$ gives the same decision as $s_0(x)>\tau$; an intercept-only update cannot improve the ranking or enlarge the attainable set of decisions. Its fixed-B trace is informative about operating-point movement, while its CAL64 trace tests this invariance in the implementation.
+
+For the prior-centred control, at each eligible update we minimize
+\begin{equation}
+ \sum_{i\in\mathrm{FIT192}}\!\left[\log(1+e^{w^T r_i+b})-y_i(w^T r_i+b)\right]
+ +\tfrac12\lVert w-w_{\mathrm{previous}}\rVert_2^2.
+\end{equation}
+The intercept is unpenalized. The penalty strength is fixed at one, matching the summed-loss scale of the original $C=1$ refit. This changes the optimization objective; merely warm-starting a zero-centred optimizer would not implement the same control.
+
+Logistic regression uses the eight standardized log-transformed inputs directly. Its initial fit uses the same 400,000-row sample of A as the spline model. River 0.22.0's adaptive random forest uses ten trees and default hyperparameters apart from its seed \citep{gomes2017,riverdocs}. It processes the same initial A sample in chronological order, then learns each delayed queried label once. We report the forest with its natural 0.5 threshold, its initial B threshold, and recent thresholds. Its accumulated tree state and reuse of calibration observations for learning distinguish it from the disjoint 192/64 head experiment. It is an equal-acquisition-budget benchmark, not a claim of equal total memory or an isolated head intervention.
+
+To expose operating compromises, each relevant score trajectory also selects thresholds minimizing
+\begin{equation}
+ L_\lambda(\tau)=\mathrm{FNR}(\tau)+\lambda\,\mathrm{FPR}(\tau),
+ \qquad \lambda\in\{0.25,0.5,1,2,4\}.
+ \label{eq:cost}
+\end{equation}
+Each threshold is estimated from the controller's available past calibration labels and applied to future blocks. B supplies the initial threshold for the same objective. $\lambda=1$ reproduces balanced-accuracy selection. The plotted points are the outcomes of these causal policies; they are not an oracle ROC envelope selected from D labels. For prevalence $\pi$ and per-error costs $C_{\rm FN},C_{\rm FP}$, the corresponding rate weight is $\lambda=C_{\rm FP}(1-\pi)/(C_{\rm FN}\pi)$. Thus the grid represents explicit relative rate costs rather than a universal operational utility.
+
+All five spline seeds additionally run on TON D with delays 0, 5, and 20 blocks, and with a 0.1\% budget at delay one. No setting replaces the original primary analysis after seeing its outcome. The salt and age/minimum rules stay fixed, allowing these tests to expose label starvation instead of changing the controller to suppress it.
+
+\subsection{Separate chronological evaluation on UNSW-NB15}
+\label{sec:unswdesign}
+The extension uses the four full UNSW-NB15 network CSVs from a versioned public mirror, with SHA-256 hashes recorded for each file. Three exact repetitions at consecutive file boundaries are verified against the complete raw rows and removed; this recovers the provider's 2,540,044 records. There is no general deduplication. The selected features are \code{dur}, \code{sbytes}, \code{dbytes}, \code{sloss}, \code{dloss}, \code{Spkts}, \code{Dpkts}, and \code{tcprtt}. They are compact numerical flow descriptors, but their semantics are not identical to the TON feature set.
+
+Records are sorted by $\max(\mathrm{Ltime},\mathrm{Stime}+\mathrm{float32}(\mathrm{dur}))$, then stable row identity. The maximum respects both the recorded last-packet time and duration; the archive's integer-second timestamps limit temporal precision. The valid ordered rows are split by fixed fractions: 40\% A (1,016,017 rows), 20\% B (508,009), and 40\% D (1,016,018). Equal timestamps occur at partition boundaries and are ordered by row identity; there is no temporal embargo or claim of event independence. These fractions and all model settings were specified before predictive results. Models are trained anew; the publisher's preselected train/test tables are unused. The D interval contains 803,736 normal and 212,282 attack records. Its A/B-unseen stratum has 523,155 rows, including 483,783 normal and 39,372 attack records. The mask affects reporting only.
+
+\subsection{Additional summaries and uncertainty}
+We retain per-block confusion counts and class counts, report attack-family recall, and add pooled AUROC for fixed initial scores and normal-count-weighted block AUROC. Adaptive scores are not pooled across different model states. To describe the original factorial design, the balanced-accuracy interaction is
+\begin{equation}
+ I_{\rm BA}=(\mathrm{BA}_{\rm FIT,CAL}-\mathrm{BA}_{\rm FIT,B})
+ -(\mathrm{BA}_{\rm Frozen,CAL}-\mathrm{BA}_{\rm Frozen,B}).
+\end{equation}
+This is a contrast of the four implemented policies, not a model-free causal percentage of adaptation benefit.
+
+Five seeds describe algorithmic randomization conditional on a capture. We do not use a nominal sign-test $p$-value as evidence across independent streams, especially given the original sampler's seed/block reuse. Supplementary moving-block resampling uses lengths 5, 20, and 50 and 2,000 replicates of recorded paired error counts. These are descriptive sensitivity ranges: replay states are not refitted after resampling, and nonstationarity precludes interpreting them as generalization confidence intervals. The separate UNSW capture supplies a more direct check of transfer of the empirical pattern.

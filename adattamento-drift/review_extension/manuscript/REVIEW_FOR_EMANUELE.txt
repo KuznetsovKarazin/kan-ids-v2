@@ -1,0 +1,13 @@
+Paper 2 revision — 1 November 2026
+
+The original October campaign remains immutable. This revision adds 55
+post-review runs and reframes the paper around conditional FN/FP trade-offs.
+The full experiment package includes INTEGRATION.md with Git-bundle import,
+reproduction commands and an explicit map to the existing replay interfaces.
+REVIEW_RESPONSE.md maps every available review comment to evidence.
+
+Please review the new interpretation, initial-state provenance bridge,
+ARF memory/calibration contract, second-capture scope, and authorship/funding/
+competing-interest declarations. Do not substitute the new runs for the
+original five seeds. The original four-of-five criterion remains unsuccessful.
+The manuscript compiles from the supplied files without training or raw data.
