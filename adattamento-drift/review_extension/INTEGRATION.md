@@ -120,6 +120,8 @@ cache lookup accepts the supplied `arf_shuffled_<seed>` folders. Use the same
 The FIT-only forest learns only FIT-role arrivals and calibrates on CAL64;
 it retains persistent trees and must not be described as equal-memory.
 
+The matched-memory code/results commit is `c2401824e3cbae6937573d2c5b91554aeb14ecb2`, whose tree matches local commit `3e55d5e0dd07e8725acb17ce8fef9f1366320c1c`.
+
 ## Matched-memory controls
 
 `review3/runner.py` reuses the original FIT192/CAL64 head trajectory and adds

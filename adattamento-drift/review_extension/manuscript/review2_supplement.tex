@@ -1,4 +1,4 @@
-\section{Second-review diagnostic design and complete summaries}
+\section{Additional diagnostic design and complete summaries}
 \label{sec:review2}
 The diagnostic protocol is fixed in commit \code{67239e4}, after all first-extension outcomes were known. It defines 120 predictive cells: 80 spline cells (eight settings, two captures, five seeds), ten LR main cells, and 30 forest cells (three conditions, two captures, five seeds). Thirty main cells repeat previous trajectories to check the new runner. They are not additional independent evidence. The first diagnostic attempt was invalidated after a uint8 overflow was found in the guard that determines whether AP is defined. The retained AP diagnostics use the widened integer-count fix and are checked against AUC class-validity coverage, with a dedicated regression test. This affected the new AP diagnostic only; the historical and first-extension reports remain unchanged. The excluded attempt is identified in the provenance log.
 

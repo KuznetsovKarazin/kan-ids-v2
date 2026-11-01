@@ -1,17 +1,20 @@
-Emanuele: second-review revision, 1 November 2026
+Emanuele: matched-memory revision, 1 November 2026
 
-Read main.pdf and the separate supplement.pdf. The title and main conclusion
-now concern operating-policy trade-offs in two captures. Preserve the weaker
-claims: the lambda=1 FPR difference is not curve-wide superiority; LR and ARF
-initial states require quality audits; seeds are conditional on each stream.
+Read main.pdf and supplement.pdf. review3/ adds ten paired spline replays
+with identical calibration observations and update gates. Keep CAL-role256
+distinct from the all-label CAL256 baseline; neither equal lambda nor equal
+capacity alone isolates a learning benefit. Full results include all failed
+FPR targets, unsupported interpolation points and conditional seed variation.
 
-The accompanying code/results package contains all 120 diagnostic cells,
-including 30 exact main-trajectory checks, plus the untouched earlier 55 runs.
-Use INTEGRATION.md for Git import, replay and numerical verification. Read
-REVIEW_RESPONSE.md for the three current reviews and explicit disagreements.
-No reviewer outcome has been omitted. Do not replace historical measurements
-with the Linux bridge. Shipped model states support reproducible extensions.
+Use INTEGRATION.md to import the code/results and manuscript commits. The
+complete package retains all 55 earlier cells, 120 diagnostic cells and ten
+matched-memory cells, plus the historical reports. All 93 targeted tests pass.
 
-Please confirm authorship, CRediT, study-specific funding and competing
-interests before journal submission. The archive metadata is prepared, but
-no permanent public archival record/DOI is claimed until actually published.
+Three authors and GAIA support/interests are now stated. Frontoni is currently
+assigned only documented funding/project-administration roles. Scientific
+contributions and the completeness of author declarations require factual
+review before submission; no broad no-conflict statement was assumed.
+A permanent public archival DOI is still pending.
+
+Use the clean LaTeX ZIP for the journal. Internal review responses and handover
+notes belong to the integration package and are not a journal response letter.

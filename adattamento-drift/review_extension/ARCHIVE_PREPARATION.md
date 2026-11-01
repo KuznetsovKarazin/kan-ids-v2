@@ -6,8 +6,9 @@ package. Neither is described as a durable research archive. This review item
 remains open until deposition is completed and its public record verified.
 
 `archive/deposit_metadata.json` contains ready-to-review metadata for a software
-and recorded-evidence deposit. Names, affiliations and ORCIDs come from the
-manuscript. The software repository uses the MIT license, retained in the
+and recorded-evidence deposit. All three names, affiliations and ORCIDs come from the
+manuscript. The evidence now includes ten matched-memory replays as well as
+the 55 and 120 earlier cells. The software repository uses the MIT license, retained in the
 results delivery. Raw TON_IoT/UNSW-NB15 data are excluded; source hashes,
 reconstruction instructions and provider attributions are included.
 
@@ -16,8 +17,8 @@ reconstruction instructions and provider attributions are included.
 Use the final `Paper2_review_extension_2026-11-01.zip`, whose delivery manifest
 records the exact Git head, protocol-history refs, file digests and validation.
 It includes the full review extension, initial states, reports, CSVs, figures,
-article and Supplement sources, and an offline Git bundle/patch transport.
-The companion `Paper2_LaTeX_revised_2026-11-01.zip` is the self-contained article package.
+article and Supplement sources, and an offline Git bundle transport.
+The companion `Paper2_LaTeX_revised_2026-11-01.zip` is the clean, self-contained article/Supplement package; internal assessments and handover notes are excluded.
 The final filenames and SHA-256 values appear in the delivery manifest supplied
 beside the archives. Do not upload raw network records or local working caches.
 
