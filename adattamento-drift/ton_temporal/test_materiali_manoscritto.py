@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import re
 from pathlib import Path
+
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parent
@@ -29,6 +32,16 @@ def _prose_words(text: str) -> int:
     return len(re.findall(r"\b[\w+/-]+\b", " ".join(lines)))
 
 
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _rgba_pixels(path: Path) -> tuple[tuple[int, int], bytes]:
+    with Image.open(path) as image:
+        rgba = image.convert("RGBA")
+        return rgba.size, rgba.tobytes()
+
+
 def test_generator_reproduces_all_committed_assets(tmp_path):
     out = tmp_path / "assets"
     MODULE.generate(
@@ -47,8 +60,31 @@ def test_generator_reproduces_all_committed_assets(tmp_path):
         "table_2_results.md",
     }
     assert {p.name for p in out.iterdir()} == expected
-    for name in expected:
+    byte_exact = expected - {"figure_2_paired_fp_fn.png", "manifest.json"}
+    for name in byte_exact:
         assert (out / name).read_bytes() == (ASSETS / name).read_bytes(), name
+    assert _rgba_pixels(out / "figure_2_paired_fp_fn.png") == _rgba_pixels(
+        ASSETS / "figure_2_paired_fp_fn.png"
+    )
+
+    generated = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    delivered = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
+    assert generated["schema"] == delivered["schema"] == 2
+    assert generated["base_merge"] == delivered["base_merge"]
+    assert generated["sources"] == delivered["sources"]
+    assert generated["verification"] == delivered["verification"]
+    assert [item["path"] for item in generated["products"]] == [
+        item["path"] for item in delivered["products"]
+    ]
+
+
+def test_png_exact_sha_and_regenerated_pixels_are_distinct_checks(tmp_path):
+    delivered = ASSETS / "figure_2_paired_fp_fn.png"
+    recompressed = tmp_path / "figure_2_recompressed.png"
+    with Image.open(delivered) as image:
+        image.save(recompressed, format="PNG", compress_level=0)
+    assert recompressed.read_bytes() != delivered.read_bytes()
+    assert _rgba_pixels(recompressed) == _rgba_pixels(delivered)
 
 
 def test_tables_in_manuscript_are_generated_verbatim():
@@ -70,32 +106,37 @@ def test_paired_values_and_interpretation_are_preserved():
     assert unseen["delta_fp"]["per_seme"][2] == 3547.0
     assert unseen["delta_fn"]["per_seme"][2] == 59443.0
     text = MANUSCRIPT.read_text(encoding="utf-8")
-    assert "seeds 43, 45, and 46" in text
-    assert "seed 44 worsened\nboth" in text
-    assert "not met" in text
-    assert "This decomposition is\npost-hoc" in text
-    assert "does not establish that repeated vectors caused the reduction" in text
+    compact = " ".join(text.split())
+    assert "seeds 43, 45, and 46" in compact
+    assert "seed 44 worsened both" in compact
+    assert "not met" in compact
+    assert "This decomposition is post-hoc" in compact
+    assert "does not establish that repeated vectors caused the reduction" in compact
+    assert "principal `FIT192+CAL64 - frozen+CAL64` comparison" in compact
 
 
 def test_draft_scope_length_and_causal_limits_are_explicit():
     text = MANUSCRIPT.read_text(encoding="utf-8")
     words = _prose_words(text)
     assert 800 <= words <= 1250, words
+    compact = " ".join(text.split())
     required = [
         "same chronological D stream",
         "not independent datasets",
         "not a confidence interval",
         "could affect predictions only from *k+2*",
         "D did not select the design or tune parameters",
-        "does not\nremove repetitions within D",
+        "does not remove repetitions within D",
         "`log1p(max(x,0))`",
         "seeded 400,000-record A subsample",
         "`C=1.0`, `max_iter=1000`",
         "A/B/C-unseen feature-vector subset",
         "complete final-evaluation command",
+        "D had already been read for structural validation and direct A/B/C/D overlap checks",
+        "predictive evaluation was run only after protocol and code were frozen",
     ]
     for phrase in required:
-        assert phrase in text
+        assert phrase in compact
     assert "statistically significant" not in text.lower()
     assert "general superiority was demonstrated" not in text.lower()
     assert "recovered attacks" not in text.lower()
@@ -104,9 +145,20 @@ def test_draft_scope_length_and_causal_limits_are_explicit():
 
 def test_manifest_and_figures_have_the_expected_provenance():
     manifest = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["schema"] == 2
     assert manifest["base_merge"] == "200a7985eb99d09926aa2e0c5b4606d0fa30ff4a"
     assert "no fit, replay, or tuning" in manifest["purpose"]
     assert len(manifest["products"]) == 7
+    assert set(manifest["generation_environment"]) == {
+        "python", "python_implementation", "platform", "numpy", "matplotlib",
+        "matplotlib_backend", "pillow",
+    }
+    assert "exact delivered bytes" in manifest["verification"]["delivered_files"]
+    assert "decoded RGBA pixels" in manifest["verification"]["regenerated_png"]
+    for product in manifest["products"]:
+        path = ASSETS / product["path"]
+        assert path.stat().st_size == product["bytes"]
+        assert _sha256(path) == product["sha256"]
     png = (ASSETS / "figure_2_paired_fp_fn.png").read_bytes()
     assert png.startswith(b"\x89PNG\r\n\x1a\n")
     svg1 = (ASSETS / "figure_1_causal_protocol.svg").read_text(encoding="utf-8")

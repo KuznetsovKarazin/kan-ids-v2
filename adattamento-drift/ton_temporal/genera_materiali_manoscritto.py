@@ -10,9 +10,12 @@ import argparse
 import csv
 import hashlib
 import json
+import platform
 from pathlib import Path
 
 import matplotlib
+import numpy as np
+import PIL
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -49,6 +52,19 @@ def _source_path(path: Path) -> str:
         return path.resolve().relative_to(HERE).as_posix()
     except ValueError:
         return str(path.resolve())
+
+
+def _generation_environment() -> dict[str, str]:
+    """Record the libraries that can affect rendering and PNG compression."""
+    return {
+        "python": platform.python_version(),
+        "python_implementation": platform.python_implementation(),
+        "platform": platform.platform(),
+        "numpy": np.__version__,
+        "matplotlib": matplotlib.__version__,
+        "matplotlib_backend": str(matplotlib.get_backend()),
+        "pillow": PIL.__version__,
+    }
 
 
 def _fmt_count(mean: float, sd: float) -> str:
@@ -295,9 +311,19 @@ def generate(analysis_path: Path, split_path: Path, output_dir: Path) -> dict:
         "figure_2_paired_fp_fn.svg",
     ]
     manifest = {
-        "schema": 1,
+        "schema": 2,
         "purpose": "first Materials and Methods and Results draft; no fit, replay, or tuning",
         "base_merge": BASE_MERGE,
+        "generation_environment": _generation_environment(),
+        "verification": {
+            "delivered_files": (
+                "verify the exact delivered bytes with each product size and SHA-256"
+            ),
+            "regenerated_text_and_svg": "compare exact bytes",
+            "regenerated_png": (
+                "compare decoded RGBA pixels; PNG compression bytes may vary by environment"
+            ),
+        },
         "sources": {
             "analysis": {"path": _source_path(analysis_path), "sha256": _sha256(analysis_path)},
             "split_manifest": {"path": _source_path(split_path), "sha256": _sha256(split_path)},

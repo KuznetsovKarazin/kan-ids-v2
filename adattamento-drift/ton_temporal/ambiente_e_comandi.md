@@ -348,12 +348,12 @@ $env:TMP = $tmp
 $env:TEMP = $tmp
 ```
 
-Attesi: **385 test superati** nella cartella `ton_temporal/`: i 251 test
+Attesi: **386 test superati** nella cartella `ton_temporal/`: i 251 test
 verificati di ADAPT-01, 8 test del checkpoint ADAPT-02 sulla memoria per classe,
 5 test sull'analisi finale, 28 test causali e di validazione dello smoke, 8
 test dell'analisi ADAPT-03, 27 test del diagnostico pesi+soglia e 32 test
 ADAPT-04, 6 test sui materiali dell'articolo, 10 test sintetici del runner
-finale, 5 test sulla finalizzazione documentale di D e 5 test sui materiali
+finale, 5 test sulla finalizzazione documentale di D e 6 test sui materiali
 della prima bozza. Per file:
 `test_documenti_coerenti.py`
 67, `test_figure.py` 38, `test_soglia.py` 26, `test_politiche.py` 26,
@@ -364,7 +364,7 @@ della prima bozza. Per file:
 `test_soglia_adattiva_online.py` 28, `test_analisi_soglia_adattiva.py` 8,
 `test_pesi_piu_soglia.py` 27, `test_calibrazione_recente.py` 32,
 `test_materiali_articolo_02.py` 6, `test_replay_validazione_finale.py` 10,
-`test_analisi_validazione_finale_D.py` 5, `test_materiali_manoscritto.py` 5.
+`test_analisi_validazione_finale_D.py` 5, `test_materiali_manoscritto.py` 6.
 
 La storia dei conteggi, perché il numero cambia a ogni commit: **139** al commit
 `c5e6d02`, **193** a `7ea4a94`, **195** a `5922992`, **239** a `5a24cf1`,
@@ -388,7 +388,7 @@ evidenze, **373** con il runner finale e le controprove sintetiche su causalita'
 inizializzazione, atomicita', ultimo blocco parziale e coppie a pesi comuni,
 **375** con la preparazione completa prima di D e la conservazione dei tempi e
 **380** con la rigenerazione della tabella assoluta e del rapporto finale, i
-controlli sugli skip iniziali, l'ultima decisione e i confini dei timer, **385**
+controlli sugli skip iniziali, l'ultima decisione e i confini dei timer, **386**
 con tabelle, figure, provenienza e limiti interpretativi della prima bozza.
 I 56 del ciclo ADAPT-01 e dal precedente sono le 38 di `test_figure.py`, 9 aggiunte a
 `test_documenti_coerenti.py` e 3 aggiunte a `test_politiche.py` per il seme
@@ -827,5 +827,9 @@ Il generatore produce in `articolo_02/manuscript_assets/` le due tabelle in
 CSV e Markdown, lo schema causale in SVG, il grafico appaiato delta FP/delta FN
 in PNG e SVG e un manifest con SHA-256. Il file
 `articolo_02/manuscript_methods_results.md` resta manuale; le prove richiedono
-che le due tabelle incorporate coincidano byte per byte con quelle generate e
-che figure, valori, denominatori e limiti interpretativi siano preservati.
+che tabelle e SVG coincidano byte per byte con quelli generati. Gli SHA-256 del
+manifest verificano i byte esatti dei file consegnati; per il PNG rigenerato si
+confrontano invece dimensioni, modo RGBA e pixel decodificati, perche' la
+compressione puo' produrre byte diversi in ambienti diversi. Il manifest
+registra versioni di Python, NumPy, Matplotlib e Pillow, backend e piattaforma.
+Valori, denominatori e limiti interpretativi restano controllati separatamente.

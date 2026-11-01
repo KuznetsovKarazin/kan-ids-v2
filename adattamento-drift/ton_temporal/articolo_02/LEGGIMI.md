@@ -34,6 +34,12 @@ python genera_materiali_manoscritto.py
 python -m pytest test_materiali_manoscritto.py -q
 ```
 
+Il manifest degli asset verifica con dimensione e SHA-256 i byte esatti della
+consegna. In una rigenerazione, CSV, Markdown e SVG sono confrontati byte per
+byte; il PNG e' confrontato sui pixel RGBA decodificati, perche' la compressione
+puo' cambiare fra ambienti senza modificare l'immagine. Il manifest registra
+Python, NumPy, Matplotlib, Pillow, backend e piattaforma usati dal generatore.
+
 I raw completi devono essere presenti nella cartella documentata
 `../archivio_esterno/`. Il generatore non li modifica. I riepiloghi versionati
 sono letti dalle cartelle ADAPT-01--04; i conteggi update/skip sono ricalcolati

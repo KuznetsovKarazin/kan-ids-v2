@@ -1,7 +1,21 @@
 {
-  "schema": 1,
+  "schema": 2,
   "purpose": "first Materials and Methods and Results draft; no fit, replay, or tuning",
   "base_merge": "200a7985eb99d09926aa2e0c5b4606d0fa30ff4a",
+  "generation_environment": {
+    "python": "3.13.2",
+    "python_implementation": "CPython",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "numpy": "2.3.4",
+    "matplotlib": "3.10.7",
+    "matplotlib_backend": "Agg",
+    "pillow": "12.0.0"
+  },
+  "verification": {
+    "delivered_files": "verify the exact delivered bytes with each product size and SHA-256",
+    "regenerated_text_and_svg": "compare exact bytes",
+    "regenerated_png": "compare decoded RGBA pixels; PNG compression bytes may vary by environment"
+  },
   "sources": {
     "analysis": {
       "path": "articolo_02/validazione_finale_D/analisi_finale.json",
