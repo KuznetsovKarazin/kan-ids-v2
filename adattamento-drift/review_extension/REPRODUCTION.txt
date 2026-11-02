@@ -74,4 +74,4 @@ provenance for the exact checks and one corrected truncated report.
 The source repository's MIT license applies to its code. The supplied ACM
 template is distributed separately under its original license; research data
 are not relicensed. The manuscript's publication rights are not assigned by
-this package. An archival DOI has not yet been registered.
+this package. Archival DOI: https://doi.org/10.5281/zenodo.23880240.

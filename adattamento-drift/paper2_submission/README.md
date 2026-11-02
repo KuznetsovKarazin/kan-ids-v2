@@ -31,12 +31,13 @@ needed to build the paper. In the repository, `refresh_assets.py` refreshes
 these assets after the evidence analysis; the standalone LaTeX ZIP contains
 the resulting assets and does not require that helper.
 
-The corresponding author must complete the ordinary submission attestations
-and obtain every author's approval. Current CRediT records only documented
-contributions: Frontoni's intellectual contribution and responsibility still
-require confirmation; a writing role must not be added merely to satisfy a
-policy. A permanent archival DOI has not yet been registered. The prepared
-deposit metadata and immutable package can be deposited after author approval.
+The confirmed CRediT statement includes Frontoni's Writing - review and editing,
+Funding acquisition and Project administration. The corresponding author must
+complete the ordinary submission attestations in the journal portal.
+The reproduction archive is identified by DOI 10.5281/zenodo.23880240.
+The DOI is included in the author version and editor letter and omitted from
+the anonymous reviewer files. A repository commit is an implementation
+identifier; the Zenodo record supplies the durable archive.
 
 Official author requirements can change; check the submission portal's current
 fields before upload: https://mc.manuscriptcentral.com/dtrap

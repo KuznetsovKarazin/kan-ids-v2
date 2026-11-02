@@ -58,19 +58,16 @@ suite storica.
 
 ## Prima dell'invio a DTRAP
 
-- Tutti e tre gli autori devono approvare testo, responsabilità e dichiarazioni.
-  Per Frontoni sono documentati Funding acquisition e Project administration;
-  occorre confermare un contributo intellettuale sostanziale e la responsabilità
-  richiesta da ACM. Aggiungere Writing — review & editing soltanto dopo un
-  effettivo intervento sul testo.
+- Il contributo intellettuale di Frontoni è confermato: il CRediT include
+  Writing — review & editing, oltre a Funding acquisition e Project administration.
+  Le attestazioni ordinarie del portale restano a cura dell'autore corrispondente.
 - Il periodo GAIA verificato è agosto–dicembre 2026. Le relazioni sono dichiarate
   nella versione identificata, non nei file per revisori anonimi.
-- Depositare il pacchetto pubblico con i metadati predisposti e registrare il
-  DOI, che non è ancora stato ottenuto. Aggiornare Data Availability e ricompilare;
-  verificare con la redazione l'anonimato del materiale pubblico durante la revisione.
+- Archivio pubblico: DOI 10.5281/zenodo.23880240. Il collegamento è inserito
+  nella versione con autori e nella lettera agli editor, ed escluso dai file
+  anonimi per revisori. Conservare questa separazione durante il caricamento.
 - Usare i file di `DTRAP_Submission`, non questo documento, il bundle Git o
   documenti interni come response letter. La lettera all'editor non attesta
   approvazioni o esclusività da dichiarare dagli autori nel portale.
 
-Il pacchetto scientifico è completo; restano gli adempimenti e le conferme degli
-autori. Non è stata effettuata alcuna submission né alcun merge automatico.
+Il pacchetto scientifico è completo; restano le attestazioni nel portale. Non è stata effettuata alcuna submission né alcun merge automatico.

@@ -1,5 +1,5 @@
 {
-  "title": "Thresholds and Learning in Adaptive Intrusion Detection: A Two-Capture Case Study \u2014 code and recorded evidence",
+  "title": "Thresholds and Learning in Adaptive Intrusion Detection: A Two-Capture Case Study — code and recorded evidence",
   "upload_type": "software",
   "description": "Executable source, fitted initial states, full per-block reports and numerical summaries for a two-capture case study of threshold selection, calibration coverage and score adaptation under sparse delayed labels. Includes 55 initial-extension cells and diagnostic sets A/B/C with 120/10/10 cells; thirty A cells repeat earlier trajectories. Set C evaluates identical all-label calibration, matched update timing and occurrence-weighted normal-role coverage. Raw traffic is not redistributed. Historical Windows evidence and Linux reconstructions are distinguished. Seeds quantify variation conditional on each previously inspected capture.",
   "creators": [
@@ -35,5 +35,7 @@
       "relation": "isSupplementTo",
       "scheme": "url"
     }
-  ]
+  ],
+  "doi": "10.5281/zenodo.23880240",
+  "publication_date": "2026-11-02"
 }
