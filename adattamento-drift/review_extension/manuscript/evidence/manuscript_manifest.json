@@ -153,11 +153,16 @@
     "D_non_visto_ABC: threshold-only AUROC identity fit192_b"
   ],
   "figures": [
+    "calibration_eligibility.pdf",
     "fig1_protocol.pdf",
     "fig2_operating_points.pdf",
     "fig3_paired_deltas.pdf",
     "fig4_development_gating.pdf",
     "fig5_cost_tradeoffs.pdf",
-    "fig6_stratum_effects.pdf"
+    "fig6_stratum_effects.pdf",
+    "review2_forest_operating_points.pdf",
+    "review2_operating_points.pdf",
+    "review2_precision_recall.pdf",
+    "review3_same_memory.pdf"
   ]
 }

@@ -1,7 +1,7 @@
 {
   "title": "Thresholds and Learning in Adaptive Intrusion Detection: A Two-Capture Case Study \u2014 code and recorded evidence",
   "upload_type": "software",
-  "description": "Code, versioned diagnostic protocols, initial fitted model states, full per-block reports, input manifests and analysis for a two-capture case study of threshold selection and model adaptation under sparse delayed labels. Includes 55 first-extension cells and 120 second-review cells, of which 30 check existing trajectories. Adds ten paired score-by-calibration-memory replays with identical calibration labels and update times. Raw network data are not redistributed. Captures were previously inspected; seeds quantify conditional algorithmic variation. Historical Windows measurements and Linux reconstructions are distinct evidence stages.",
+  "description": "Executable source, fitted initial states, full per-block reports and numerical summaries for a two-capture case study of threshold selection, calibration coverage and score adaptation under sparse delayed labels. Includes 55 initial-extension cells and diagnostic sets A/B/C with 120/10/10 cells; thirty A cells repeat earlier trajectories. Set C evaluates identical all-label calibration, matched update timing and occurrence-weighted normal-role coverage. Raw traffic is not redistributed. Historical Windows evidence and Linux reconstructions are distinguished. Seeds quantify variation conditional on each previously inspected capture.",
   "creators": [
     {
       "name": "Kuznetsov, Oleksandr",
@@ -28,10 +28,10 @@
   ],
   "license": "mit",
   "access_right": "open",
-  "version": "2026-11-01-matched-memory",
+  "version": "2026-11-02-calibration-eligibility",
   "related_identifiers": [
     {
-      "identifier": "https://github.com/KuznetsovKarazin/kan-ids-v2/tree/paper2/review-extension-20261101",
+      "identifier": "https://github.com/KuznetsovKarazin/kan-ids-v2/tree/paper2/dtrap-submission-20261102",
       "relation": "isSupplementTo",
       "scheme": "url"
     }

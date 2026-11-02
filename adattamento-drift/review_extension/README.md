@@ -1,99 +1,34 @@
-# Paper 2: matched-memory article, diagnostics and integration package
+# Paper 2: calibration coverage, thresholds and learning
 
-This extension answers **what learning changes beyond a recent threshold, and
-where the resulting FN/FP trade-off occurs**. Read `PROTOCOL.md` before using
-the results. The original October campaign and the November extension are
-distinct evidence stages. The extension contains 55 complete runs: 30 main
-dataset/model/seed combinations, five legacy-query bridges, fifteen additional
-delay runs, and five low-budget runs.
+The current ACM DTRAP sources are in `../paper2_submission/`. Its `main.pdf`
+and `supplement.pdf` are anonymous; `author-version.pdf` and
+`supplement-author.pdf` include authors and declarations. Earlier article
+files under `manuscript/` are historical, while its numerical asset generators
+remain active.
 
-## Matched-memory extension
+The evidence comprises 55 initial-extension cells and diagnostic sets A/B/C
+with 120/10/10 cells. Thirty A cells repeat earlier trajectories. Set C adds
+Head/ALL256, matched update gates, normal-role strata and occurrence-weighted
+role coverage. All 195 cells are retained. New shared trajectories match
+exactly; the 96-test targeted suite and all numerical analysis checks pass.
+The broader legacy suite's missing external-archive checks are documented in
+`calibration_audit/provenance/execution.json`.
 
-`review3/` adds ten spline replays (both captures, five seeds) crossing frozen
-and adapted scores with disjoint CAL-role64 and CAL-role256. Each paired score
-comparison holds calibration observations, objective and update times fixed.
-The original FIT192 head trajectory is unchanged. The larger calibration buffer
-increases retention to 448 examples, without extra acquisition or FIT/CAL reuse.
-It must not be confused with the earlier all-label Frozen/CAL256 controller.
+Neutral release names map to immutable execution directories: diagnostic A
+uses `review2/`, B uses `review3/`, C uses `calibration_audit/`. Original path
+strings and role-salt bytes are retained for source-hash reproducibility.
+They are internal development identifiers, not journal-review history.
+`export_release.py --out /path/to/release` produces a neutral reproduction
+package and a separate anonymous numerical-evidence package. Internal working
+response documents are excluded from both.
 
-The final replay runner was fixed at `efe004e`; the original protocol is
-`9213001`. Initial setup failures and corrections are recorded in
-`review3/provenance/execution.json`; all ten retained reports are complete.
-Every shared block trajectory agrees exactly with the earlier diagnostic run.
+Read `REPRODUCTION.txt` for complete verification/replay instructions and
+`INTEGRATION.md` for Bernardis's integration steps. Verify shipped bytes with:
 
-## Second-review extension
-
-The current article evaluates threshold policy, baseline quality and error
-compromises in two previously inspected captures. `review2/` adds 120 fixed
-cells: 80 spline settings, 10 LR main cells and 30 ARF initialization/label-use
-cells. Thirty cells repeat the earlier main trajectories; they are checks, not
-independent replication. The original 55 reports are immutable.
-
-- `manuscript/main.tex` / `main.pdf`: compact current article.
-- `manuscript/supplement.tex` / `supplement.pdf`: historical development and full
-  diagnostic tables, including first-extension results.
-- `review2/PROTOCOL.md`, `runner.py`, `campaign.py`, `test_runner.py`: new design,
-  causal controllers and regression tests.
-- `review2/results/`: all 120 full reports, audits and execution logs.
-- `review2/models/`: ten additional fitted shuffled-A forest states.
-- `review2/analysis/`: exact repeat checks, AP, dense cost grid, matched-error
-  descriptions, calibration transfer, memory/age/minimum/salt sensitivity.
-- `REVIEW_RESPONSE.md`: all three current reviews, including qualifications to
-  reviewer interpretations; prior response is preserved separately.
-- `ARCHIVE_PREPARATION.md`: exact remaining archival status and deposit metadata.
-
-## First-extension contents
-
-- `manuscript/main.tex`, `references.bib`, and `main.pdf`: revised article.
-- `PROTOCOL.md`: design committed before new predictive outcomes.
-- `experiment.py`: paired causal controllers and standard ARF baseline.
-- `prepare_data.py`, `fetch_data.py`: input reconstruction and mirror hashes.
-- `run_campaign.py`: all pre-specified cells, with per-job logs.
-- `analyze.py`: numerical invariants, paired differences, tables and figures.
-- `test_experiment.py`: leakage, query pairing, threshold/intercept invariance,
-  prior-centred objective, and exact duplicate reuse tests.
-- `results/`: every full compressed extension report.
-- `original_reports/`: all five original reports and their summary.
-- `models/`: the fitted initial states used by this extension, with metadata.
-- `analysis/`: per-seed and aggregate CSVs, interactions, resampling sensitivity,
-  time partitions, resource accounting, and verification manifest.
-- `provenance/`: source/array digests and recorded reconstruction checks.
-- `REVIEW_RESPONSE.md`: point-by-point response and remaining author-only facts.
-- `INTEGRATION.md`: concrete commands for Emanuele to import the commit series.
-
-## Build the paper from saved evidence
-
-First verify the shipped files without loading model pickles:
-
-```bash
+```sh
 python adattamento-drift/review_extension/verify_artifacts.py
+make -C adattamento-drift/paper2_submission all
 ```
-
-The LaTeX directory is self-contained and can be imported into Overleaf.
-
-```bash
-cd adattamento-drift/review_extension/manuscript
-make all
-```
-
-To rebuild numerical assets from the complete saved reports, from the repository root:
-
-```bash
-python -m venv .venv-review
-.venv-review/bin/pip install -r adattamento-drift/review_extension/requirements.txt
-.venv-review/bin/python adattamento-drift/review_extension/manuscript/build_assets.py
-.venv-review/bin/python adattamento-drift/review_extension/analyze.py \
-  --results adattamento-drift/review_extension/results \
-  --original adattamento-drift/review_extension/original_reports \
-  --out adattamento-drift/review_extension/analysis
-.venv-review/bin/python adattamento-drift/review_extension/review2/analyze.py
-.venv-review/bin/python adattamento-drift/review_extension/review3/analyze.py
-```
-
-`main.tex`, `supplement.tex` and the generated tables/figures do not require raw data to compile.
-Add `--data /path/to/reconstructed-data` to recompute the time-partition manifest
-from raw reconstruction; otherwise the retained provenance manifest is used.
-On Windows use `.venv-review\Scripts\python.exe` and the corresponding `pip.exe`.
 
 ## Reconstruct inputs and run all experiments
 
@@ -140,7 +75,7 @@ ordinary `prepare` command refits models and may vary across numerical
 environments. Pickles are generated by this package and must only be loaded
 from a trusted, hash-verified copy.
 
-To reproduce the second-review cells, first restore the original 30 models
+To reproduce the diagnostic-A cells, first restore the original 30 models
 using the commands above, then restore the ten new forest states:
 
 ```bash
@@ -189,12 +124,13 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv-review/bin/python -m pytest -q \
   adattamento-drift/review_extension/test_experiment.py \
   adattamento-drift/review_extension/review2/test_runner.py \
   adattamento-drift/review_extension/review3/test_matched_memory.py \
+  adattamento-drift/review_extension/calibration_audit/test_calibration_audit.py \
   adattamento-drift/ton_temporal/test_calibrazione_recente.py \
   adattamento-drift/ton_temporal/test_soglia.py \
   adattamento-drift/ton_temporal/test_replay_validazione_finale.py
 ```
 
-The recorded targeted suite has 93 passing tests (89 earlier tests plus four matched-memory invariants). Analysis verifies every
+The recorded targeted suite has 96 passing tests (including three calibration-eligibility invariants). Analysis verifies every
 block/stream count reconciliation, seen+unseen decomposition, common query
 sequence, and intercept/threshold invariance. Original source CSV hashes and
 all 710 D row/label block digests match. A reconstruction using the unmodified

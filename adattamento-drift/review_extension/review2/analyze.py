@@ -167,23 +167,23 @@ def main():
         return df[(df.dataset==ds)&(df.family==fam)&(df.condition==cond)&(df.policy==pol)&(df.scope==scope)]
     lines=[]
     for ds in ('ton','unsw'):
-        for label,pol in [('Frozen / B','frozen_b'),('Frozen / CAL256, $\\lambda=1$','frozen_cal256'),('Frozen / CAL256, $\\lambda=2$','frozen_cal256_l2'),('Head / CAL64, $\\lambda=1$','head_cal64'),('Head / CAL64, $\\lambda=2$','head_cal64_l2')]:
+        for label,pol in [('Frozen / B','frozen_b'),('Frozen / ALL256, $\\lambda=1$','frozen_cal256'),('Frozen / ALL256, $\\lambda=2$','frozen_cal256_l2'),('Head / ROLE64, $\\lambda=1$','head_cal64'),('Head / ROLE64, $\\lambda=2$','head_cal64_l2')]:
             q=select(ds,'spline','main',pol)
             if len(q):lines.append(ds.upper()+' & '+label+' & '+' & '.join(pm(q,m) for m in ('recall','fpr','ba'))+r' \\')
     (tables/'review2_cost_rows.tex').write_text('\n'.join(lines)+'\n')
     lines=[]
     for ds in ('ton','unsw'):
         for alpha in runner.ALPHAS:
-            for name,prefix in [('Frozen/CAL256','frozen_cal256'),('Head/CAL64','head_cal64')]:
+            for name,prefix in [('Frozen/ALL256','frozen_cal256'),('Head/ROLE64','head_cal64')]:
                 q=select(ds,'spline','main',prefix+f'_fpr{alpha:g}')
                 if len(q):lines.append(f'{ds.upper()} & {100*alpha:g} & {name} & '+' & '.join(pm(q,m) for m in ('recall','fpr','ba'))+r' \\')
     (tables/'review2_fpr_rows.tex').write_text('\n'.join(lines)+'\n')
     lines=[]
     for ds in ('ton','unsw'):
         for cond,label in [('main','Chronological A'),('shuffled','Shuffled A'),('fit_only','FIT-only feedback')]:
-            policies=[('frozen_cal256','Frozen/CAL256'),('arf_cal64','ARF/CAL64'),('arf_cal256','ARF/CAL256')]
-            if cond=='shuffled':policies=[('frozen_b','Frozen/B'),('frozen_cal256','Frozen/CAL256'),('arf_b','ARF/B'),('arf_05','ARF/0.5'),('arf_cal64','ARF/CAL64'),('arf_cal256','ARF/CAL256')]
-            if cond=='fit_only':policies=[('arf_cal64','ARF/CAL64')]
+            policies=[('frozen_cal256','Frozen/ALL256'),('arf_cal64','ARF/ROLE64'),('arf_cal256','ARF/ALL256')]
+            if cond=='shuffled':policies=[('frozen_b','Frozen/B'),('frozen_cal256','Frozen/ALL256'),('arf_b','ARF/B'),('arf_05','ARF/0.5'),('arf_cal64','ARF/ROLE64'),('arf_cal256','ARF/ALL256')]
+            if cond=='fit_only':policies=[('arf_cal64','ARF/ROLE64')]
             for policy,short in policies:
                 q=select(ds,'arf',cond,policy)
                 if len(q)==5:lines.append(f'{ds.upper()} & {label} & {short} & '+' & '.join(pm(q,m) for m in ('recall','fpr','ba'))+r' \\')
@@ -262,11 +262,11 @@ The mean-curve and paired-seed summaries describe different operations. At 13\% 
     for ds in ('ton','unsw'):
         f=select(ds,'arf','shuffled','frozen_cal256');h=select(ds,'arf','shuffled','arf_cal256');fit=select(ds,'arf','fit_only','arf_cal64');fb=select(ds,'arf','shuffled','frozen_b')
         if len(f)==len(h)==len(fit)==5:
-            findings.append(f'On {ds.upper()}, shuffled-A ARF/CAL256 reaches {100*h.ba.mean():.2f}\\% BA; its corresponding frozen/CAL256 state reaches {100*f.ba.mean():.2f}\\%, and its historical frozen/B policy reaches {100*fb.ba.mean():.2f}\\%. The chronological FIT-only/CAL64 forest reaches {100*fit.ba.mean():.2f}\\%, using CAL-role labels exclusively for threshold selection.')
+            findings.append(f'On {ds.upper()}, shuffled-A ARF/ALL256 reaches {100*h.ba.mean():.2f}\\% BA; its corresponding frozen/ALL256 state reaches {100*f.ba.mean():.2f}\\%, and its historical frozen/B policy reaches {100*fb.ba.mean():.2f}\\%. The chronological FIT-only/ROLE64 forest reaches {100*fit.ba.mean():.2f}\\%, using CAL-role labels exclusively for threshold selection.')
     if findings:
         fm=pd.DataFrame(forest_match)
         q=fm[(fm.dataset=='ton')&(fm.condition=='shuffled')&(fm.axis=='fpr')&(fm.target==.2)].dropna(subset=['delta'])
-        if len(q)==5:findings.append(f'At 20\\% FPR, within-seed interpolation of the shuffled forests\' nine-weight policies gives adaptive-minus-frozen recall {pm(q,"delta")} percentage points across all five supported pairs. This comparison uses adaptive CAL64 versus frozen CAL256, and the forest retains persistent state and calibration-label reuse. It supports a TON learning contribution under that contract beyond the spline-specific single-point contrast. The selected matched-FPR targets have no common support for all five UNSW pairs; no extrapolated forest comparison is used there.')
+        if len(q)==5:findings.append(f'At 20\\% FPR, within-seed interpolation of the shuffled forests\' nine-weight policies gives adaptive-minus-frozen recall {pm(q,"delta")} percentage points across all five supported pairs. This comparison uses adaptive ROLE64 versus frozen ALL256, and the forest retains persistent state and calibration-label reuse. It supports a TON learning contribution under that contract beyond the spline-specific single-point contrast. The selected matched-FPR targets have no common support for all five UNSW pairs; no extrapolated forest comparison is used there.')
         findings.append('These initialization and label-use contrasts delimit the forest result. The shuffled initial state is a batch-initialization control on historical A, not a reshuffling of the evaluation stream. The FIT-only control removes calibration-label reuse during D while preserving the forest\'s accumulated tree state; it supplies a label-use check rather than an equal-memory comparison.')
     (tables.parent/'review2_findings.tex').write_text('\n\n'.join(findings)+'\n')
     sens=[]
@@ -284,7 +284,7 @@ The mean-curve and paired-seed summaries describe different operations. At 13\% 
     figs=HERE.parent/'manuscript/figures'
     fig,axes=plt.subplots(1,3,figsize=(11.5,3.8))
     for ax,(ds,scope,title) in zip(axes,[('ton','all','TON: full stream'),('ton','unseen','TON: unseen vectors'),('unsw','all','UNSW: full stream')]):
-        for prefix,label,color,style in [('frozen_cal256','Frozen spline / CAL256','#12677A','--'),('head_cal64','Spline head / CAL64','#A35624','-')]:
+        for prefix,label,color,style in [('frozen_cal256','Frozen spline / ALL256','#12677A','--'),('head_cal64','Spline head / ROLE64','#A35624','-')]:
             points=[]
             for lam in runner.LAMBDAS:
                 q=select(ds,'spline','main',prefix+('' if lam==1 else f'_l{lam:g}'),scope)
@@ -301,7 +301,7 @@ The mean-curve and paired-seed summaries describe different operations. At 13\% 
     plt.close(fig)
     fig,axes=plt.subplots(1,3,figsize=(11.5,3.7))
     for ax,(ds,prev,title) in zip(axes,[('ton',None,'TON: observed prevalence'),('unsw',None,'UNSW: observed prevalence'),('ton',.01,'TON rates at hypothetical 1% attacks')]):
-        for prefix,label,color in [('frozen_cal256','Frozen spline / CAL256','#12677A'),('head_cal64','Spline head / CAL64','#A35624')]:
+        for prefix,label,color in [('frozen_cal256','Frozen spline / ALL256','#12677A'),('head_cal64','Spline head / ROLE64','#A35624')]:
             pts=[]
             for lam in runner.LAMBDAS:
                 q=select(ds,'spline','main',prefix+('' if lam==1 else f'_l{lam:g}'))
@@ -317,7 +317,7 @@ The mean-curve and paired-seed summaries describe different operations. At 13\% 
     for row,cond in enumerate(('main','shuffled')):
         for col,ds in enumerate(('ton','unsw')):
             ax=axes[row,col]
-            for prefix,label,color,style in [('frozen_cal256','Frozen ARF / CAL256','#12677A','--'),('arf_cal64','Adaptive ARF / CAL64','#A35624','-')]:
+            for prefix,label,color,style in [('frozen_cal256','Frozen ARF / ALL256','#12677A','--'),('arf_cal64','Adaptive ARF / ROLE64','#A35624','-')]:
                 pts=[]
                 for lam in runner.LAMBDAS:
                     q=select(ds,'arf',cond,prefix+('' if lam==1 else f'_l{lam:g}'))

@@ -114,7 +114,7 @@ def main():
                 ax.plot(points.fpr,points.recall,'o-' if name=='head' else 'o--',color=color,label=name.title(),ms=4)
                 for lam in [1.,2.]:
                     p=points.loc[lam];ax.annotate(f'{lam:g}',(p.fpr,p.recall),xytext=(4,-12 if name=='head' else 5),textcoords='offset points',fontsize=8)
-            ax.set_title(f'{ds.upper()}: CAL-role{cap}')
+            ax.set_title(f'{ds.upper()}: ROLE{cap}')
             ax.set_xlim(0,85);ax.set_ylim(35,101);ax.grid(alpha=.2)
             if row==1:ax.set_xlabel('Achieved FPR (%)')
             if col==0:ax.set_ylabel('Achieved recall (%)')

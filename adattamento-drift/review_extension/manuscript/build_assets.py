@@ -33,7 +33,7 @@ A = json.loads((E/'analisi_finale.json').read_text())
 S = json.loads((E/'split_manifest.json').read_text())
 R = {(r['ambito'], r['traccia']): r for r in A['risultati_assoluti']}
 traces = ['frozen_b','frozen_cal64','fit192_b','fit192_cal64']
-labels = ['Frozen / B','Frozen / CAL64','FIT192 / B','FIT192 / CAL64']
+labels = ['Frozen / B','Frozen / ROLE64','FIT192 / B','FIT192 / ROLE64']
 scopes = ['D_completo','D_non_visto_ABC']
 scope_labels = ['All D','A/B/C-unseen vectors in D']
 checks = []
@@ -112,17 +112,17 @@ def box(x,y,w,h,txt,c=blue):
     ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle='round,pad=0.09',lw=1.1,edgecolor=c,facecolor=c+'0B'))
     ax.text(x+w/2,y+h/2,txt,ha='center',va='center',fontsize=9,color='#172C3C')
 def arrow(a,b,c=gray):ax.add_patch(FancyArrowPatch(a,b,arrowstyle='-|>',mutation_scale=11,lw=1.2,color=c))
-box(.1,4.45,9.7,.68,'Before D: fit transforms + spline functions on A; choose initial threshold on B.\nFreeze protocol after C development; start D with empty FIT192 and CAL64.')
+box(.1,4.45,9.7,.68,'Before D: fit transforms + spline functions on A; choose initial threshold on B.\nFreeze protocol after C development; start D with empty FIT192 and ROLE64.')
 box(.1,2.88,2.75,.85,'Block k\nPredict; request 1% labels\nAssign fixed vector roles')
 box(3.45,2.88,2.65,.85,'End of block k + 1\nRequested labels arrive\nFill FIT and CAL memories')
 box(6.7,3.4,3.1,.72,'FIT192: refit the head\n8 gains + intercept',teal)
-box(6.7,2.4,3.1,.72,'CAL64: select thresholds\nAge ≤ 50; ≥ 5 per class',orange)
+box(6.7,2.4,3.1,.72,'ROLE64: select thresholds\nAge ≤ 50; ≥ 5 per class',orange)
 arrow((2.85,3.3),(3.4,3.3));arrow((6.1,3.4),(6.65,3.9));arrow((6.1,3.2),(6.65,2.75))
 box(3.45,1.0,6.35,.9,'Atomic valid update → first possible effect in block k + 2\nOtherwise retain the previous head and both recent thresholds.')
 arrow((8.25,2.38),(8.25,1.95))
 ax.plot([9.9,10.15,10.15],[3.9,3.9,1.45],color=gray,lw=1.2)
 arrow((10.15,1.45),(9.9,1.45))
-box(.1,.1,9.7,.48,'Paired traces: Frozen / B     |     Frozen / CAL64     |     FIT192 / B     |     FIT192 / CAL64')
+box(.1,.1,9.7,.48,'Paired traces: Frozen / B     |     Frozen / ROLE64     |     FIT192 / B     |     FIT192 / ROLE64')
 save(fig,'fig1_protocol')
 
 # Figure 2: operating points. Each point is a mean across seeds; axes are rates.
@@ -133,7 +133,7 @@ for ax,scope,title in zip(axes,scopes,scope_labels):
         ys=[R[scope,t]['metriche']['recall_pp']['media'] for t in [a,b]]
         ax.plot(xs,ys,color=c,alpha=.45,lw=1.2)
     offsets=[(5,6),(-85,-15),(6,7),(-74,8)] if scope==scopes[0] else [(12,30),(5,-16),(35,2),(-82,8)]
-    for tr,lab,off in zip(traces,['Frozen / B','Frozen / CAL64','FIT192 / B','FIT192 / CAL64'],offsets):
+    for tr,lab,off in zip(traces,['Frozen / B','Frozen / ROLE64','FIT192 / B','FIT192 / ROLE64'],offsets):
         m=R[scope,tr]['metriche'];c=blue if tr.startswith('frozen') else orange
         mark='o' if tr.endswith('_b') else 's'
         ax.errorbar(m['fpr_pp']['media'],m['recall_pp']['media'],xerr=m['fpr_pp']['deviazione_standard'],yerr=m['recall_pp']['deviazione_standard'],fmt=mark,color=c,ms=6,capsize=4,elinewidth=1.3)
@@ -164,9 +164,9 @@ for ax in axes:
     ax.set_xlim(0,int(x.max()))
 cn=np.array([float(r['cal_recenti_normali'] or 'nan') for r in rows])
 axes[0].plot(x,cn,color=teal,lw=.8);axes[0].axhline(5,color=gray,ls='--',lw=.8)
-axes[0].set_ylabel('Recent normal\nlabels in CAL64');axes[0].text(430,25,'423 prediction blocks after consecutive skips',ha='center',fontsize=8,color=orange)
+axes[0].set_ylabel('Recent normal\nlabels in ROLE64');axes[0].text(430,25,'423 prediction blocks after consecutive skips',ha='center',fontsize=8,color=orange)
 for ax,metric,yl in [(axes[1],'recall','Attack recall (%)'),(axes[2],'fpr','False-positive rate (%)')]:
-    for tr,label,c in [('frozen_cal64','Frozen / CAL64',blue),('fit192_cal64','FIT192 / CAL64',orange)]:
+    for tr,label,c in [('frozen_cal64','Frozen / ROLE64',blue),('fit192_cal64','FIT192 / ROLE64',orange)]:
         y=np.array([float(r[metric+'_'+tr]) if r[metric+'_'+tr] else np.nan for r in rows])*100
         ax.plot(x,y,lw=.7,alpha=.85,color=c,label=label)
     ax.set_ylabel(yl);ax.set_ylim(-3,103)

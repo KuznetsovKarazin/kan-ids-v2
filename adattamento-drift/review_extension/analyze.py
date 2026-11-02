@@ -150,7 +150,7 @@ def main():
         interactions[scope]={'per_seed_pp':rr,'mean_pp':np.mean(rr),'sd_pp':np.std(rr,ddof=1)}
     odf=pd.DataFrame(original_rows);odf.to_csv(a.out/'original_strata.csv',index=False)
     for scope in ('seen','unseen'):
-        for pol,label in [('frozen_cal64','Frozen / CAL64'),('fit192_cal64','FIT192 / CAL64')]:
+        for pol,label in [('frozen_cal64','Frozen / ROLE64'),('fit192_cal64','FIT192 / ROLE64')]:
             v=odf[(odf.scope==scope)&(odf.policy==pol)]
             stratum_rows.append(f'{scope.capitalize()} & {label} & '+ ' & '.join(pm(v[k],100) for k in ('recall','fpr','ba'))+r' \\')
     (tables/'strata_rows.tex').write_text('\n'.join(stratum_rows)+'\n')
@@ -169,13 +169,13 @@ def main():
 
     def subset(dataset,family,policy,scope='all',condition='main'):
         return df[(df.dataset==dataset)&(df.family==family)&(df.policy==policy)&(df.scope==scope)&(df.condition==condition)]
-    selected=[('spline','frozen_b','Spline: Frozen / B'),('spline','frozen_cal64','Spline: Frozen / CAL64'),
-              ('spline','frozen_cal256','Spline: Frozen / CAL256'),('spline','head_cal64','Spline: FIT192 / CAL64'),
-              ('lr','frozen_b','LR: Frozen / B'),('lr','frozen_cal256','LR: Frozen / CAL256'),
-              ('lr','head_cal64','LR: FIT192 / CAL64'),
-              ('arf','frozen_b','ARF: Frozen / B'),('arf','frozen_cal256','ARF: Frozen / CAL256'),
+    selected=[('spline','frozen_b','Spline: Frozen / B'),('spline','frozen_cal64','Spline: Frozen / ROLE64'),
+              ('spline','frozen_cal256','Spline: Frozen / ALL256'),('spline','head_cal64','Spline: FIT192 / ROLE64'),
+              ('lr','frozen_b','LR: Frozen / B'),('lr','frozen_cal256','LR: Frozen / ALL256'),
+              ('lr','head_cal64','LR: FIT192 / ROLE64'),
+              ('arf','frozen_b','ARF: Frozen / B'),('arf','frozen_cal256','ARF: Frozen / ALL256'),
               ('arf','arf_05','ARF: threshold 0.5'),('arf','arf_b','ARF: threshold B'),
-              ('arf','arf_cal64','ARF: CAL64'),('arf','arf_cal256','ARF: CAL256')]
+              ('arf','arf_cal64','ARF: ROLE64'),('arf','arf_cal256','ARF: ALL256')]
     for dataset in ('ton','unsw'):
         lines=[]
         for family,pol,label in selected:
@@ -185,14 +185,14 @@ def main():
         (tables/(dataset+'_extension_rows.tex')).write_text('\n'.join(lines)+'\n')
     lines=[]
     for dataset in ('ton','unsw'):
-        for pol,label in [('frozen_ungated64','Independent CAL64'),('offset_b','Offset / B'),
-                          ('offset_cal64','Offset / CAL64'),('prior_cal64','Prior-centred / CAL64')]:
+        for pol,label in [('frozen_ungated64','Independent ROLE64'),('offset_b','Offset / B'),
+                          ('offset_cal64','Offset / ROLE64'),('prior_cal64','Prior-centred / ROLE64')]:
             v=subset(dataset,'spline',pol)
             lines.append(dataset.upper()+' & '+label+' & '+' & '.join(pm(v[k],100) for k in ('recall','fpr','ba'))+r' \\')
     (tables/'ablation_rows.tex').write_text('\n'.join(lines)+'\n')
     lines=[]
     for condition,label in [('delay0','Delay 0'),('main','Delay 1'),('delay5','Delay 5'),('delay20','Delay 20'),('budget001','Budget 0.1\\%')]:
-        for pol,lpol in [('frozen_cal256','Frozen/CAL256'),('head_cal64','FIT192/CAL64')]:
+        for pol,lpol in [('frozen_cal256','Frozen/ALL256'),('head_cal64','FIT192/ROLE64')]:
             v=subset('ton','spline',pol,condition=condition)
             upd=[reports[('ton','spline',s,condition)]['updates'].get('head' if pol=='head_cal64' else 'cal256',0) for s in range(42,47)]
             lines.append(label+' & '+lpol+' & '+' & '.join(pm(v[k],100) for k in ('recall','fpr','ba'))+' & '+pm(upd,digits=1)+r' \\')
@@ -253,7 +253,7 @@ def main():
             for j,(metric,label,color) in enumerate([('delta_recall','Recall','#12677A'),('delta_fpr','FPR','#A35624')]):
                 ax.errorbar(i+(j-.5)*.22,100*v[metric].mean(),yerr=100*v[metric].std(),fmt='o',capsize=3,color=color,label=label if i==0 else None)
         ax.axhline(0,color='#777',lw=.8);ax.set_xticks(range(3),['All','Seen','Unseen']);ax.set_title(title);ax.grid(axis='y',alpha=.15)
-    axes[0].set_ylabel('Head/CAL64 minus Frozen/CAL256 (pp)');axes[1].legend(frameon=False)
+    axes[0].set_ylabel('Head/ROLE64 minus Frozen/ALL256 (pp)');axes[1].legend(frameon=False)
     fig.tight_layout()
     for ext in ('pdf','png'):fig.savefig(figs/('fig6_stratum_effects.'+ext),bbox_inches='tight',dpi=180)
     plt.close(fig)

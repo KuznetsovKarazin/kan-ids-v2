@@ -1,149 +1,76 @@
-# Integration for Emanuele Pio De Bernardis
+# Paper 2 — consegna per Emanuele Pio De Bernardis
 
-This change belongs exclusively to **Paper 2: drift/adaptation**. It does not
-change Paper 1, MCU firmware, the original replay implementation, or the original
-October reports. The base is `81d99d9020d60b39d3b5a65fc6f06296f89537db`.
+La versione corrente è nel ramo `paper2/dtrap-submission-20261102` del fork
+`KuznetsovKarazin/kan-ids-v2`. La base del repository dello studente verificata
+è `81d99d9020d60b39d3b5a65fc6f06296f89537db`. La consegna include tutti gli
+incrementi precedenti e due nuovi blocchi: codice/evidenze di calibrazione e
+manoscritto ACM. Non applicare soltanto l'ultimo commit a una base che non
+contiene gli incrementi intermedi.
 
-## Import the complete revision
+## Importare senza sovrascrivere il lavoro locale
 
-The online delivery branch is `paper2/review-extension-20261101` in
-`KuznetsovKarazin/kan-ids-v2`. It contains the first-extension commits and second-review and matched-memory code/results
-and manuscript commits. The delivery manifest records the exact final heads. The Git bundle also retains the original local development
-history as `paper2/local-protocol-history` and the new pre-run history as
-`paper2/review2-protocol-history` and `paper2/review3-protocol-history`; this preserves the protocol and
-runner commits made before the new outcomes were inspected. From your existing `kan-ids-v2` checkout:
+Da un clone pulito, verificare prima `git status`. Poi:
 
-```bash
-git bundle verify /path/to/Paper2_review_extension.bundle
-git fetch /path/to/Paper2_review_extension.bundle \
-  paper2/review-extension-20261101:paper2/review-extension-20261101
-git switch paper2/review-extension-20261101
-git log --oneline 81d99d9..HEAD
+```sh
+git fetch https://github.com/KuznetsovKarazin/kan-ids-v2.git paper2/dtrap-submission-20261102
+git switch -c paper2-dtrap-integration FETCH_HEAD
+git log --oneline 81d99d9020d60b39d3b5a65fc6f06296f89537db..HEAD
+git diff --stat 81d99d9020d60b39d3b5a65fc6f06296f89537db..HEAD
 ```
 
-Review or open a pull request from this branch. To integrate onto a later main,
-create a new branch from main and cherry-pick the series in chronological order:
+Se esiste già `paper2-dtrap-integration`, scegliere un nome nuovo; non usare
+reset o push forzati. Il bundle permette lo stesso import offline:
+`git bundle verify Paper2_History.bundle`, poi `git fetch` dal percorso del
+bundle usando il ramo sopra. I riferimenti di provenienza conservano i
+protocolli fissati prima delle rispettive esecuzioni.
 
-```bash
-git switch -c paper2/integrate-review main
-git cherry-pick $(git rev-list --reverse 81d99d9..paper2/review-extension-20261101)
-```
+## Controllare e ricostruire
 
-The bundle additionally carries the local-history ref. Import it when auditing
-protocol timing:
+1. Seguire `REPRODUCTION.txt`: ambiente, SHA-256, 96 test, ricostruzione delle
+   tabelle dai report. I dati grezzi servono solo per rifare le predizioni.
+2. Eseguire `make -C adattamento-drift/paper2_submission all` con TeX Live
+   completo. `main.pdf` e `supplement.pdf` sono anonimi; `author-version.pdf`
+   e `supplement-author.pdf` includono nomi e dichiarazioni. I vecchi PDF in
+   `review_extension/manuscript/` sono superati.
+3. Leggere le sezioni su copertura CAL, confronto ALL256, violazioni dei target
+   e limiti dei due capture. Verificare il proprio CRediT.
+4. Aprire una PR da questo ramo verso `main`, riportando le verifiche. Il merge
+   e l'approvazione scientifica spettano ai coautori. Non rilanciare il vecchio
+   D per cercare un seed o un peso migliore.
 
-```bash
-git fetch /path/to/Paper2_review_extension.bundle \
-  paper2/local-protocol-history:paper2/local-protocol-history
-```
+## Risultato nuovo da mantenere nel testo
 
-That history retains the protocol commit `f4ec381`,
-created before inspecting the new predictive outcomes. `178e069` contains the
-executed runner; `19892b0` corrects the test for River's benign metric-dictionary
-cache behavior. The published results commit is `54871f0f36b22a69fe9a114a617d957b896da7b1`,
-whose tree exactly matches local evidence commit `33341bc`. The delivery manifest
-lists both histories and the final manuscript commit. The reports also carry the exact SHA-256 of the executed runner.
-The new diagnostic protocol is `67239e4`; the initial diagnostic runner is
-`bcac962`; `d6c82ec` fixes the AP validity guard before the retained diagnostic
-results. The corrected runner SHA-256 is
-`81537d6add508cf9f852b756d596c0cb85020fa5edf3a5ba9abcb6e768d0bca9`.
-The first extension runner remains byte-identical.
+TON, target FPR 5%: Frozen/ROLE256 realizza 31,98%; Frozen/ALL256 con lo stesso
+sistema di abilitazione degli aggiornamenti realizza 4,53%. La capacità non
+spiega il divario: cambiano gli esempi ammessi in calibrazione. Head/ALL256
+realizza ancora 10,22%, quindi il target non è garantito. Con ALL256 identico e
+lambda=2, head/frozen hanno BA 87,94%/86,78%, FPR 9,94%/13,16%, recall
+85,83%/86,72%. Il vantaggio residuo è condizionato alla politica; su UNSW i
+controlli storici restano più forti.
 
-The current results archive supplies a Git bundle as its complete transport.
-It includes model states and recorded evidence once, avoiding duplicate large
-binary patches. The small CSV previews are also directly accessible in the ZIP.
+Set C aggiunge dieci replay: 600.825 controlli durante il replay e 574.280
+verifiche di sorgenti, traiettorie e aggregazione. Tutte le traiettorie condivise
+coincidono. La suite mirata passa 96/96. La suite legacy più ampia passa 408 test,
+ne salta 3 e fallisce 3 controlli di documenti/output e materiali storici che
+richiedono archivi esterni assenti dal clone; dettagli in
+`calibration_audit/provenance/execution.json`. Non dichiarare verde l'intera
+suite storica.
 
-The second-review code/results commit is `dd9e0ea8bb2d8c9d8283e752e8a059b104291390`. Its tree matches
-local evidence commit `7538cf0869fb713efc247703a1d5d8b12bef1a4b`.
-The subsequent manuscript commit is recorded in the external delivery manifest.
+## Prima dell'invio a DTRAP
 
-## What plugs into the existing code
+- Tutti e tre gli autori devono approvare testo, responsabilità e dichiarazioni.
+  Per Frontoni sono documentati Funding acquisition e Project administration;
+  occorre confermare un contributo intellettuale sostanziale e la responsabilità
+  richiesta da ACM. Aggiungere Writing — review & editing soltanto dopo un
+  effettivo intervento sul testo.
+- Il periodo GAIA verificato è agosto–dicembre 2026. Le relazioni sono dichiarate
+  nella versione identificata, non nei file per revisori anonimi.
+- Depositare il pacchetto pubblico con i metadati predisposti e registrare il
+  DOI, che non è ancora stato ottenuto. Aggiornare Data Availability e ricompilare;
+  verificare con la redazione l'anonimato del materiale pubblico durante la revisione.
+- Usare i file di `DTRAP_Submission`, non questo documento, il bundle Git o
+  documenti interni come response letter. La lettera all'editor non attesta
+  approvazioni o esclusività da dichiarare dagli autori nel portale.
 
-`review_extension/experiment.py` imports the unchanged `ton_temporal/replay.py`,
-`calibrazione_recente.py` and `soglia_bilanciata.py`. It reuses their transform,
-model representation, immutable roles, replay memory, atomic head transaction
-and exact threshold tie rule. The extension adds controllers around those
-interfaces, preserving the historical campaign behavior.
-
-- Keep `calibrazione_recente.proponi_transazione` and `applica_transazione` as
-  the matched FIT192/CAL64 path.
-- Keep `all_cal` separate: it receives all acquired labels and independently
-  controls Frozen/CAL256. Do not restrict it to the CAL role or head gate.
-- Use `query_indices` for new studies; keep the `legacy` switch only to compare
-  the archived October query identities. Never relabel the new results as the
-  old campaign.
-- Preserve the prediction → query → delayed arrival → update order. No new
-  state can affect a prediction that has already been emitted.
-- Keep ARF's practical baseline contract explicit: all arrived queried labels
-  are learned once, CAL labels are reused, and the model has persistent memory.
-  Its thresholds 0.5, B, CAL64 and CAL256 are separate reporting traces.
-- Keep cost weights fixed before evaluation. The nine second-review operating points are
-  selected from past labels; they are not an oracle ROC frontier fitted on D.
-
-## Reproduce and check
-
-Follow `README.md` for the pinned environment and input reconstruction. First
-run the 93-test targeted suite (include `review2/test_runner.py` and `review3/test_matched_memory.py`). Rebuild saved-evidence analysis with:
-
-```bash
-PY=.venv-review/bin/python
-EXT=adattamento-drift/review_extension
-$PY $EXT/manuscript/build_assets.py
-$PY $EXT/analyze.py --results $EXT/results \
-  --original $EXT/original_reports --out $EXT/analysis
-$PY $EXT/review2/analyze.py
-$PY $EXT/review3/analyze.py
-cd "$EXT/manuscript"
-make all
-```
-
-This analysis mode uses the retained time-partition manifest. Supply `--data`
-to recompute it from reconstructed NPZs. To rerun predictions without refitting
-initial models, use `rebuild_cache.py` as documented, then `run_campaign.py`.
-The saved model states matter because a fresh numerical environment need not
-reproduce the original initial fit bit for bit.
-
-## Scientific changes to retain during integration
-
-The primary question now compares complete operating policies, rather than
-using the lambda=1 contrast as a general head advantage. Keep the cost grid,
-matched-error descriptions and causal FPR-target results together. Preserve
-the poor LR/ARF initial-state audits, shuffled-A and FIT-only forest controls,
-CAL-memory/age/minimum and role-salt sensitivity, and all unfavorable outcomes.
-The historical 3/5 count and numerical bridge's 2/5 are both required. The
-LR 4/5 is exploratory and uses a different comparator. Neither five seeds nor
-a second already-known capture creates a pristine prospective validation.
-
-`review2/runner.py` imports the unchanged first-extension runner. Its initial
-cache lookup accepts the supplied `arf_shuffled_<seed>` folders. Use the same
-`rebuild_cache.py` for these states, pointing `--models` at `review2/models/<ds>`.
-The FIT-only forest learns only FIT-role arrivals and calibrates on CAL64;
-it retains persistent trees and must not be described as equal-memory.
-
-The matched-memory code/results commit is `c2401824e3cbae6937573d2c5b91554aeb14ecb2`, whose tree matches local commit `3e55d5e0dd07e8725acb17ce8fef9f1366320c1c`.
-
-## Matched-memory controls
-
-`review3/runner.py` reuses the original FIT192/CAL64 head trajectory and adds
-frozen/head pairs on identical CAL-role64 and CAL-role256. Keep all four
-thresholds on the original successful-transaction gate. The larger CAL memory
-accepts CAL-role arrivals only and remains disjoint from FIT. Retain the
-independent all-label frozen controller as a separate, stronger information
-contract. Its difference from CAL-role256 is not a capacity effect.
-
-On TON, the head's FPR reduction persists within each matched-memory pair.
-A larger head CAL memory improves default BA by 1.83 points, while changing
-which labels may enter calibration can have a much larger effect. On UNSW,
-the matched score contrast changes sign with capacity, but historical Frozen/B
-remains stronger. Keep all FPR-target violations and unsupported interpolation
-points; do not turn the nearby 18.37%/19.95% FPR pair into an exact match.
-
-The recorded protocol history starts at `9213001`; the executed runner is
-`efe004e`. `review3/provenance/execution.json` identifies source hashes and
-excluded startup checks. All ten retained runs and 93 targeted tests pass.
-
-All three authors must verify their contribution and disclosure statements
-before submission. GAIA support and documented relationships are now stated;
-no unsupported scientific contribution is assigned to Frontoni. Use the clean
-LaTeX ZIP for submission, not the full integration ZIP with internal review
-notes. Permanent archival deposition remains a distinct publication step.
+Il pacchetto scientifico è completo; restano gli adempimenti e le conferme degli
+autori. Non è stata effettuata alcuna submission né alcun merge automatico.
