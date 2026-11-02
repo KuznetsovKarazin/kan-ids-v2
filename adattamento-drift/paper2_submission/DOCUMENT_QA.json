@@ -1,0 +1,57 @@
+{
+  "main": {
+    "pages": 15,
+    "overfull_boxes": 0,
+    "undefined_references": 0,
+    "out_of_page_words": 0,
+    "sha256": "a945c510c998ce5052236ccda4bfdb3bd8a54c92a678c349cc29908a384e95ba",
+    "author_metadata": ""
+  },
+  "supplement": {
+    "pages": 23,
+    "overfull_boxes": 0,
+    "undefined_references": 0,
+    "out_of_page_words": 0,
+    "sha256": "179f4b88ec911f0ddd0288ade8d7b0e601a0b52132eb4479862561559a49d240",
+    "author_metadata": ""
+  },
+  "author-version": {
+    "pages": 16,
+    "overfull_boxes": 0,
+    "undefined_references": 0,
+    "out_of_page_words": 0,
+    "sha256": "00f2970ac9ebe752a8f4acc98b9e3c88328312de43f7c214c643815fbd68ef6c",
+    "author_metadata": ""
+  },
+  "supplement-author": {
+    "pages": 24,
+    "overfull_boxes": 0,
+    "undefined_references": 0,
+    "out_of_page_words": 0,
+    "sha256": "c01d1a17dae4858416fef0609083fbb4b1f8f706f0a3781db4109589a44876fa",
+    "author_metadata": ""
+  },
+  "editor-letter": {
+    "pages": 2,
+    "overfull_boxes": 0,
+    "undefined_references": 0,
+    "out_of_page_words": 0,
+    "sha256": "7ffbb4c3d64eea456dc5520fd1673afc2845e479e8b2fbfcc231ce122b45a48f",
+    "author_metadata": "Oleksandr Kuznetsov"
+  },
+  "evidence": {
+    "recorded_cells": 195,
+    "repeat_controls": 30,
+    "targeted_tests": 96,
+    "anonymous_numerical_checks": 89355,
+    "new_replay_checks": 600825,
+    "new_analysis_checks": 574280,
+    "restored_source_tests_and_analyses": "passed"
+  },
+  "visual_review": "All pages rendered and inspected; changed pages checked after final build.",
+  "remaining_author_actions": [
+    "Substantial intellectual contribution and responsibility for third-author eligibility; all-author approval",
+    "Zenodo archival DOI: authenticated account required",
+    "Submission attestations in the journal portal"
+  ]
+}
